@@ -3,12 +3,17 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from app.database.base import Base
-from app.core.config import settings
+from app.config import settings
 
-import app.domain.users.models
+# Importar os novos models para que o Alembic os detecte
+from app.domain.projects import models as project_models
+from app.domain.activities import models as activity_models
+
+# O Alembic precisa de uma conexão síncrona (psycopg2). Convertemos a URL do asyncpg.
+sync_db_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", sync_db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -17,14 +22,14 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline():
-    context.configure(url=settings.DATABASE_URL, target_metadata=target_metadata, literal_binds=True)
+    context.configure(url=sync_db_url, target_metadata=target_metadata, literal_binds=True)
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online():
     from sqlalchemy import create_engine
-    connectable = create_engine(settings.DATABASE_URL)
+    connectable = create_engine(sync_db_url)
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
