@@ -8,3 +8,5 @@ psycopg2-binary
 python-multipart
 email-validator
 openpyxl
+passlib[bcrypt]
+python-jose[cryptography]
