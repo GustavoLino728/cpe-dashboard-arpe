@@ -117,19 +117,19 @@ export const statusMap: Record<StatusType, StatusDetail> = {
     label: "Concluído",
     corTailwind:
       "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30",
-    corHex: "#6B7280",
+    corHex: "#10B981",
   },
   warn: {
     label: "Em andamento",
     corTailwind:
       "text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30",
-    corHex: "#A1A7AF",
+    corHex: "#F59E0B",
   },
   late: {
     label: "Atrasado",
     corTailwind:
       "text-rose-700 bg-rose-50 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30",
-    corHex: "#3F444D",
+    corHex: "#EF4444",
   },
 };
 
@@ -586,16 +586,16 @@ export function extractCoordenadorias(atividades: Atividade[]): string[] {
  * paleta base, ciclando se houver mais coordenadorias do que cores).
  */
 const COORD_PALETTE = [
-  "#4B5563",
-  "#6B7280",
-  "#9CA3AF",
-  "#D1D5DB",
-  "#374151",
-  "#1F2937",
-  "#111827",
-  "#7C8FA1",
-  "#5B95C4",
-  "#7B69B8",
+  "#3B82F6",
+  "#10B981",
+  "#F97316",
+  "#8B5CF6",
+  "#EC4899",
+  "#06B6D4",
+  "#6366F1",
+  "#84CC16",
+  "#D946EF",
+  "#14B8A6",
 ];
 
 export function getCoordColor(coordenadoria: string, index: number): string {

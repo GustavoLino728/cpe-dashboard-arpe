@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
@@ -7,8 +7,8 @@ RUN npm install
 
 COPY . .
 
-# Desativar telemetria do Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOSTNAME="0.0.0.0"
 
 EXPOSE 3000
 

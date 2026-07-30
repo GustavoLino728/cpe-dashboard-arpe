@@ -10,8 +10,9 @@
   --sidebar-hover: #1F3B57;
   --teal: #1B7F79;
   --bg: #EEF2F5;
-  --panel: #FFFFFF;
-  --line: #E4E9ED;
+  --panel: #F7F8FA;
+  --line: #D5DBE1;
+  --panel-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
   --radius: 14px;
 
   --background: var(--bg);
@@ -28,6 +29,7 @@
   --bg: #141618;
   --panel: #1D1F23;
   --line: #303236;
+  --panel-shadow: none;
 }
 
 @theme inline {
@@ -57,4 +59,8 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-/* KPI Cards — estilo executivo: fundo neutro via tokens de tema, cor de acento apenas no ícone (inline) */
+/* Painéis e cards — sombra sutil no modo claro para separação visual */
+[class*="bg-panel"] {
+  box-shadow: var(--panel-shadow);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}

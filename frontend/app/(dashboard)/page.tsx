@@ -139,7 +139,7 @@ export default function DashboardHome() {
       counts[d.responsavel] = (counts[d.responsavel] || 0) + 1;
     });
 
-    const topColors = ["#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#374151"];
+    const topColors = ["#3B82F6", "#8B5CF6", "#EC4899", "#06B6D4", "#F97316"];
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
@@ -368,18 +368,18 @@ export default function DashboardHome() {
                 <Bar
                   dataKey="Concluído"
                   stackId="statusStack"
-                  fill="#6B7280"
+                  fill="#10B981"
                   radius={[0, 0, 4, 4]}
                 />
                 <Bar
                   dataKey="Em andamento"
                   stackId="statusStack"
-                  fill="#A1A7AF"
+                  fill="#F59E0B"
                 />
                 <Bar
                   dataKey="Atrasado"
                   stackId="statusStack"
-                  fill="#3F444D"
+                  fill="#EF4444"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
