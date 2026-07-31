@@ -9,7 +9,6 @@ import {
   Atividade,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
-import { handleOfflineFallback } from "./api-mock";
 
 export * from "./api-types";
 export * from "./api-utils";
@@ -52,8 +51,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (err instanceof ApiError) {
       throw err;
     }
-    console.warn(`[API] Servidor ${API_BASE} indisponível. Usando modo de demonstração local.`, err);
-    return handleOfflineFallback<T>(path, init);
+    throw new ApiError("Não foi possível conectar ao servidor de API.", 503);
   }
 }
 
