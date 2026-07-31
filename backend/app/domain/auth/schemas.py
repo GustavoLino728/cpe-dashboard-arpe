@@ -13,6 +13,8 @@ class RegisterIn(BaseModel):
 
 
 class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
     ok: bool = True
     message: str = "Login realizado com sucesso."
 

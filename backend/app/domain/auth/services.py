@@ -26,5 +26,5 @@ async def register_user(db: AsyncSession, name: str, email: str, password: str) 
     Cria um novo usuário via fluxo de registro.
     Delega para create_user — conflito de e-mail lança ConflictError automaticamente.
     """
-    data = UserCreate(name=name, email=email, password=password, role="viewer")
+    data = UserCreate(name=name, email=email, password=password, role="servidor")
     return await create_user(db, data)

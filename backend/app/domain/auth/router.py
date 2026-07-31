@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, status
 
 from app.config import settings
 from app.dependencies import CurrentUser, DBSession
@@ -14,23 +14,13 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
     response_model=TokenOut,
     summary="Autenticar usuário",
 )
-async def login(payload: LoginIn, response: Response, db: DBSession):
+async def login(payload: LoginIn, db: DBSession):
     """
     Autentica com e-mail e senha.
-    Emite cookie HttpOnly com JWT em caso de sucesso.
+    Retorna o token de acesso no corpo da resposta.
     """
     _, token = await authenticate(db, payload.email, payload.password)
-
-    response.set_cookie(
-        key=settings.cookie_name,
-        value=token,
-        httponly=settings.cookie_httponly,
-        secure=settings.cookie_secure,
-        samesite=settings.cookie_samesite,
-        max_age=settings.access_token_expire_minutes * 60,
-        path="/",
-    )
-    return TokenOut()
+    return TokenOut(access_token=token)
 
 
 @router.post(
@@ -61,9 +51,9 @@ async def register(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Encerrar sessão",
 )
-async def logout(response: Response):
-    """Remove o cookie de sessão."""
-    response.delete_cookie(key=settings.cookie_name, path="/")
+async def logout():
+    """Encerra a sessão (o cliente deve descartar o token)."""
+    pass
 
 
 @router.get(

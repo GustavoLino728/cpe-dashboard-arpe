@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
@@ -8,13 +9,13 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
-    role: str = "viewer"
+    role: Literal["servidor", "coordenador", "admin"] = "servidor"
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
     is_active: bool | None = None
-    role: str | None = None
+    role: Literal["servidor", "coordenador", "admin"] | None = None
 
 
 class UserOut(BaseModel):
