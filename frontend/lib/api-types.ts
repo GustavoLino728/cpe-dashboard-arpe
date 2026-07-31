@@ -1,0 +1,91 @@
+export interface ApiActivity {
+  id: string;
+  project_id: string;
+  description: string;
+  sei_number: string | null;
+  department: string[] | null;
+  start_date: string | null;
+  deadline: string | null;
+  working_days: number | null;
+  new_date: string | null;
+  status: string;
+  observations: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiProject {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  activities: ApiActivity[];
+}
+
+export interface ApiProjectSummary {
+  projeto: string;
+  data_referencia: string;
+  total_atividades: number;
+  concluidas: number;
+  em_andamento: number;
+  nao_iniciadas: number;
+  percentual_conclusao: number;
+  prazos_proximos_7_dias: number;
+  prazos_criticos_2_dias: number;
+  atrasadas: number;
+}
+
+export interface ApiSectorLoad {
+  setor: string;
+  total: number;
+}
+
+export interface ApiSectorStatus {
+  setor: string;
+  concluido: number;
+  em_andamento: number;
+  nao_iniciado: number;
+}
+
+export interface ApiCriticalActivity {
+  id: string;
+  descricao: string;
+  setor: string;
+  prazo_final: string | null;
+  status: string;
+  dias_para_prazo: number;
+}
+
+export interface ApiPhaseStatus {
+  fase: string;
+  concluido: number;
+  em_andamento: number;
+  nao_iniciado: number;
+}
+
+export interface ApiTimelineEvent {
+  id: string;
+  descricao: string;
+  data_inicio: string | null;
+  prazo_final: string | null;
+  status: string;
+  fase: string;
+}
+
+export type StatusType = "ok" | "warn" | "late";
+
+export interface Atividade {
+  atividade: string;
+  coordenadoria: string;
+  responsavel: string;
+  progresso: number;
+  prazo: string;
+  status: StatusType;
+}
+
+export interface StatusDetail {
+  label: string;
+  corTailwind: string;
+  corHex: string;
+}
