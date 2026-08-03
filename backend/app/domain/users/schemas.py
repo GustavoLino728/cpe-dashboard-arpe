@@ -10,12 +10,14 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     role: Literal["servidor", "coordenador", "admin"] = "servidor"
+    department: str | None = None
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
     is_active: bool | None = None
     role: Literal["servidor", "coordenador", "admin"] | None = None
+    department: str | None = None
 
 
 class UserOut(BaseModel):
@@ -25,6 +27,7 @@ class UserOut(BaseModel):
     name: str
     email: EmailStr
     role: str
+    department: str | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime

@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     cookie_httponly: bool = True
     cookie_samesite: str = "lax"
 
+    # SMTP
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str = "notificacoes@suaempresa.com.br"
+    smtp_tls: bool = True
+
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, v: str) -> str:
