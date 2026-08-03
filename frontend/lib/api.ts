@@ -1,5 +1,6 @@
 import {
   ApiProject,
+  ApiProjectSimple,
   ApiProjectSummary,
   ApiPhaseStatus,
   ApiSectorLoad,
@@ -58,12 +59,19 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export async function fetchAtividades(): Promise<Atividade[]> {
   const projects = await apiFetch<ApiProject[]>("/api/v1/projects");
   return projects.flatMap((proj) =>
-    proj.activities.map((act) => mapApiToAtividade(act))
+    proj.activities.map((act) => ({
+      ...mapApiToAtividade(act),
+      projeto: proj.name,
+    }))
   );
 }
 
 export async function fetchProjects(): Promise<ApiProject[]> {
   return apiFetch<ApiProject[]>("/api/v1/projects");
+}
+
+export async function fetchProjectsSimple(): Promise<ApiProjectSimple[]> {
+  return apiFetch<ApiProjectSimple[]>("/api/v1/projects/list");
 }
 
 export async function uploadPlanilha(file: File): Promise<ApiProject[]> {

@@ -23,6 +23,14 @@ export interface ApiProject {
   activities: ApiActivity[];
 }
 
+export interface ApiProjectSimple {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ApiProjectSummary {
   projeto: string;
   data_referencia: string;
@@ -82,6 +90,7 @@ export interface Atividade {
   progresso: number;
   prazo: string;
   status: StatusType;
+  projeto?: string;
 }
 
 export interface StatusDetail {

@@ -13,6 +13,13 @@ export default function DashboardHome() {
     scope,
     selectedCoord,
     setSelectedCoord,
+    selectedProject,
+    setSelectedProject,
+    selectedMacro,
+    setSelectedMacro,
+    projetos,
+    macroprocessos,
+    resetFilters,
     mounted,
     loading,
     error,
@@ -45,7 +52,7 @@ export default function DashboardHome() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Filtro por Coordenadoria */}
+      {/* Filtros */}
       <div className="flex items-center gap-3 flex-wrap">
         {scope === "coordenadoria" && (
           <select
@@ -54,7 +61,7 @@ export default function DashboardHome() {
             onChange={(e) => setSelectedCoord(e.target.value)}
             className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
           >
-            <option value="todas">Central — todas as coordenadorias</option>
+            <option value="todas">Coordenadoria — Todas</option>
             {coordenadorias.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -62,7 +69,46 @@ export default function DashboardHome() {
             ))}
           </select>
         )}
-        <span className="text-[12px] text-ink-soft" id="viewNote">
+
+        {/* Filtro por Projeto */}
+        <select
+          id="projectSelect"
+          value={selectedProject}
+          onChange={(e) => setSelectedProject(e.target.value)}
+          className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
+        >
+          <option value="todos">Projeto — Todos</option>
+          {projetos.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+
+        {/* Filtro por Macroprocessos (não implementado) */}
+        <select
+          id="macroSelect"
+          value={selectedMacro}
+          onChange={(e) => setSelectedMacro(e.target.value)}
+          className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
+        >
+          <option value="todos">Macroprocesso — Todos</option>
+          {macroprocessos.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+
+        {/* Botão Redefinir Filtros */}
+        <button
+          onClick={resetFilters}
+          className="font-sans text-[13px] font-semibold text-teal hover:text-teal/80 border border-teal/20 hover:border-teal/40 rounded-lg py-2 px-4 cursor-pointer hover:bg-teal/5 transition-all duration-150 shadow-sm"
+        >
+          Redefinir Filtros
+        </button>
+
+        <span className="text-[12px] text-ink-soft ml-auto" id="viewNote">
           {loading ? "Carregando dados..." : metrics.viewNote}
         </span>
       </div>
