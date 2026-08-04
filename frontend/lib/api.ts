@@ -13,6 +13,8 @@ import { mapApiToAtividade } from "./api-utils";
 export * from "./api-types";
 export * from "./api-utils";
 
+import { getAccessToken } from "@/lib/auth";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
 export class ApiError extends Error {
@@ -27,10 +29,18 @@ export class ApiError extends Error {
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
+
+  // Montar headers com token de autenticação (se disponível)
+  const token = getAccessToken();
+  const authHeaders: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
   try {
     const res = await fetch(url, {
       ...init,
       headers: {
+        ...authHeaders,
         ...(init?.headers ?? {}),
       },
     });

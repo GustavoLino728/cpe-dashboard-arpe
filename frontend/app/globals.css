@@ -64,3 +64,9 @@ body {
   box-shadow: var(--panel-shadow);
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
+
+/* Animação de fade-in para alertas e transições sutis */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

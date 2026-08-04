@@ -2,13 +2,22 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/ThemeProvider";
+import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Sun, Moon } from "lucide-react";
 
 export function Topbar() {
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/login");
+  };
 
   // Determine which tab is active based on the current URL
   const isDashboard = pathname === "/";
@@ -79,15 +88,15 @@ export function Topbar() {
       <div className="flex items-center gap-4 text-[13px] text-ink-soft">
         {/* Chip de usuário */}
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-teal/15 text-teal flex items-center justify-center text-[13px] font-bold select-none">
-            U
+          <div className="w-8 h-8 rounded-full bg-teal/15 text-teal flex items-center justify-center text-[13px] font-bold select-none uppercase">
+            {user?.name?.charAt(0) ?? "U"}
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-[12.5px] font-semibold text-ink leading-tight">
-              Usuário
+              {user?.name ?? "Usuário"}
             </span>
             <span className="text-[11px] text-ink-soft leading-tight">
-              Analista
+              {user?.email ?? ""}
             </span>
           </div>
         </div>
@@ -116,6 +125,7 @@ export function Topbar() {
 
         {/* Logout */}
         <button
+          onClick={handleLogout}
           className="flex items-center text-ink-soft hover:text-ink cursor-pointer bg-transparent border-none transition-colors duration-150"
           title="Sair"
         >
