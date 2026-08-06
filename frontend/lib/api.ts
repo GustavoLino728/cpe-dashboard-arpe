@@ -8,6 +8,9 @@ import {
   ApiCriticalActivity,
   ApiTimelineEvent,
   Atividade,
+  ApiUser,
+  ApiUserCreate,
+  ApiUserUpdate,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
@@ -147,4 +150,33 @@ export async function fetchDashboardTimeline(
   return apiFetch<ApiTimelineEvent[]>(
     `/api/dashboard/projetos/${encodeURIComponent(project)}/timeline`
   );
+}
+
+export async function fetchUsers(): Promise<ApiUser[]> {
+  return apiFetch<ApiUser[]>("/api/v1/users");
+}
+
+export async function createUser(data: ApiUserCreate): Promise<ApiUser> {
+  return apiFetch<ApiUser>("/api/v1/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateUser(
+  userId: string,
+  data: ApiUserUpdate
+): Promise<ApiUser> {
+  return apiFetch<ApiUser>(`/api/v1/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await apiFetch<void>(`/api/v1/users/${userId}`, {
+    method: "DELETE",
+  });
 }

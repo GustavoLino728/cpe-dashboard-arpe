@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   name: string;
@@ -14,11 +15,20 @@ const navItems: NavItem[] = [
   { name: "Atividades", href: "/atividades", icon: "▤" },
   { name: "Coordenadorias", href: "/coordenadorias", icon: "◔" },
   { name: "Planilhas", href: "/planilhas", icon: "☰" },
+  { name: "Usuários", href: "/usuarios", icon: "👥" },
   { name: "Configuração", href: "/configuracao", icon: "⚙" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.href === "/usuarios") {
+      return user?.role === "admin";
+    }
+    return true;
+  });
 
   return (
     <aside className="bg-sidebar text-[#C3D0DC] py-5 flex flex-col w-[220px] shrink-0 border-r border-line/10 h-full overflow-y-auto max-lg:w-full max-lg:flex-row max-lg:overflow-x-auto max-lg:overflow-y-visible max-lg:h-auto max-lg:py-3 max-lg:px-4 max-lg:items-center max-lg:justify-between max-lg:border-r-0 max-lg:border-b select-none">
@@ -33,7 +43,7 @@ export function Sidebar() {
       {/* Navegação simples sem grupos */}
       <nav className="flex flex-col flex-1 gap-1 max-lg:flex-row max-lg:items-center">
         <ul className="list-none m-0 p-0 flex flex-col w-full max-lg:flex-row max-lg:gap-1">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <li key={item.href}>

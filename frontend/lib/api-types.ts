@@ -98,3 +98,28 @@ export interface StatusDetail {
   corTailwind: string;
   corHex: string;
 }
+
+export interface ApiUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "servidor" | "coordenador" | "admin";
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiUserCreate {
+  name: string;
+  email: string;
+  password: string;
+  role: "servidor" | "coordenador" | "admin";
+}
+
+export interface ApiUserUpdate {
+  name?: string;
+  email?: string;
+  role?: "servidor" | "coordenador" | "admin";
+  is_active?: boolean;
+  password?: string;
+}
