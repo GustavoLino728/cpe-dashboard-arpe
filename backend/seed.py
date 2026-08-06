@@ -29,6 +29,7 @@ async def main() -> None:
             email="admin@arpe.pe.gov.br",
             password_hash=hash_password("Admin@2026"),
             role="admin",
+            department="GAB",
             is_active=True,
         )
         session.add(admin)

@@ -60,7 +60,6 @@ export default function LoginPage() {
 
   const isFormValid = email.includes("@") && password.length >= 4;
 
-  // Não renderizar até montar (evita flash de conteúdo)
   if (!mounted || authLoading) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -69,7 +68,6 @@ export default function LoginPage() {
     );
   }
 
-  // Se já autenticado, não mostrar o form (redirect em andamento)
   if (isAuthenticated) return null;
 
   return (

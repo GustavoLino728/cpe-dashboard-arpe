@@ -71,6 +71,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  // Escutar eventos de token inválido/expirado
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      console.warn("[AuthContext] Token inválido ou expirado detectado. Fazendo logout automático...");
+      logout();
+    };
+
+    window.addEventListener("api-unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("api-unauthorized", handleUnauthorized);
+    };
+  }, [logout]);
+
   const value: AuthContextType = {
     user,
     isLoading,

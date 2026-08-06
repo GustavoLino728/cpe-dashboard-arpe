@@ -9,7 +9,6 @@ export default function ConfiguracaoPage() {
   const [frequency, setFrequency] = useState("manual");
   const [notifyLate, setNotifyLate] = useState(true);
 
-  // ---- Coordenadorias dinâmicas da API ----
   const [coordenadorias, setCoordenadorias] = useState<string[]>([]);
 
   const loadCoords = useCallback(async () => {
@@ -17,26 +16,17 @@ export default function ConfiguracaoPage() {
       const data = await fetchAtividades();
       setCoordenadorias(extractCoordenadorias(data));
     } catch {
-      // Silencioso — selects ficam com "todas" apenas
       setCoordenadorias([]);
     }
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCoords();
   }, [loadCoords]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // TODO: Persistir as configurações reais do usuário.
-    // Exemplo:
-    // await fetch('/api/user/settings', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ defaultCoord, frequency, notifyLate })
-    // });
-    
+        
     alert(
       "Configurações Salvas (Simulação)!\n\n" +
       "Valores:\n" +
