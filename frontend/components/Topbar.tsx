@@ -2,14 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/ThemeProvider";
+import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Sun, Moon, Check, ChevronDown } from "lucide-react";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 
 export function Topbar() {
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/login");
+  };
 
   // Determine which tab is active based on the current URL
   const isDashboard = pathname === "/";
@@ -54,23 +63,20 @@ export function Topbar() {
 
       {/* Direita: Menu suspenso do Usuário */}
       <div className="flex items-center gap-4 text-[13px] text-ink-soft">
-        <Menu as="div" className="relative inline-block text-left">
-          <div>
-            <MenuButton className="flex items-center gap-2.5 cursor-pointer rounded-lg p-1.5 hover:bg-line/10 dark:hover:bg-line/5 transition-colors focus:outline-none select-none">
-              <div className="w-8 h-8 rounded-full bg-teal/15 text-teal flex items-center justify-center text-[13px] font-bold">
-                U
-              </div>
-              <div className="hidden sm:flex flex-col text-left">
-                <span className="text-[12.5px] font-semibold text-ink leading-tight">
-                  Usuário
-                </span>
-                <span className="text-[11px] text-ink-soft leading-tight">
-                  Analista
-                </span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-ink-soft" />
-            </MenuButton>
+        {/* Chip de usuário */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-teal/15 text-teal flex items-center justify-center text-[13px] font-bold select-none uppercase">
+            {user?.name?.charAt(0) ?? "U"}
           </div>
+          <div className="hidden sm:flex flex-col">
+            <span className="text-[12.5px] font-semibold text-ink leading-tight">
+              {user?.name ?? "Usuário"}
+            </span>
+            <span className="text-[11px] text-ink-soft leading-tight">
+              {user?.email ?? ""}
+            </span>
+          </div>
+        </div>
 
           <MenuItems
             transition
@@ -103,21 +109,15 @@ export function Topbar() {
             {/* Separador */}
             <div className="my-1 h-px bg-line/40" />
 
-            {/* Opção Sair */}
-            <MenuItem>
-              {({ focus }) => (
-                <button
-                  className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-[13px] font-medium text-left cursor-pointer border-none bg-transparent transition-colors ${
-                    focus ? "bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400" : "text-ink-soft"
-                  }`}
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sair
-                </button>
-              )}
-            </MenuItem>
-          </MenuItems>
-        </Menu>
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center text-ink-soft hover:text-ink cursor-pointer bg-transparent border-none transition-colors duration-150"
+          title="Sair"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
+</MenuItems>
       </div>
     </header>
   );
