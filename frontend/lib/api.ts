@@ -1,5 +1,6 @@
 import {
   ApiProject,
+  ApiProjectSimple,
   ApiProjectSummary,
   ApiPhaseStatus,
   ApiSectorLoad,
@@ -7,6 +8,9 @@ import {
   ApiCriticalActivity,
   ApiTimelineEvent,
   Atividade,
+  ApiUser,
+  ApiUserCreate,
+  ApiUserUpdate,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
@@ -68,12 +72,19 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export async function fetchAtividades(): Promise<Atividade[]> {
   const projects = await apiFetch<ApiProject[]>("/api/v1/projects");
   return projects.flatMap((proj) =>
-    proj.activities.map((act) => mapApiToAtividade(act))
+    proj.activities.map((act) => ({
+      ...mapApiToAtividade(act),
+      projeto: proj.name,
+    }))
   );
 }
 
 export async function fetchProjects(): Promise<ApiProject[]> {
   return apiFetch<ApiProject[]>("/api/v1/projects");
+}
+
+export async function fetchProjectsSimple(): Promise<ApiProjectSimple[]> {
+  return apiFetch<ApiProjectSimple[]>("/api/v1/projects/list");
 }
 
 export async function uploadPlanilha(file: File): Promise<ApiProject[]> {
@@ -139,4 +150,33 @@ export async function fetchDashboardTimeline(
   return apiFetch<ApiTimelineEvent[]>(
     `/api/dashboard/projetos/${encodeURIComponent(project)}/timeline`
   );
+}
+
+export async function fetchUsers(): Promise<ApiUser[]> {
+  return apiFetch<ApiUser[]>("/api/v1/users");
+}
+
+export async function createUser(data: ApiUserCreate): Promise<ApiUser> {
+  return apiFetch<ApiUser>("/api/v1/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateUser(
+  userId: string,
+  data: ApiUserUpdate
+): Promise<ApiUser> {
+  return apiFetch<ApiUser>(`/api/v1/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await apiFetch<void>(`/api/v1/users/${userId}`, {
+    method: "DELETE",
+  });
 }

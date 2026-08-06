@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from app.database.session import get_db
-from app.domain.projects.schemas import ProjectSchema
+from app.domain.projects.schemas import ProjectSchema, ProjectSimpleOut
 from app.domain.projects.models import Project
 from app.domain.projects.services import save_extracted_data
 from app.domain.projects.excel_parser import parse_excel_projects
@@ -44,6 +44,17 @@ async def list_projects(db: AsyncSession = Depends(get_db)):
     """
     result = await db.execute(
         select(Project).options(selectinload(Project.activities))
+    )
+    return result.scalars().all()
+
+
+@router.get("/list", response_model=list[ProjectSimpleOut])
+async def list_projects_simple(db: AsyncSession = Depends(get_db)):
+    """
+    Lista todos os projetos salvos sem carregar as atividades.
+    """
+    result = await db.execute(
+        select(Project).order_by(Project.name.asc())
     )
     return result.scalars().all()
 

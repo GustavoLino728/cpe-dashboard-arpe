@@ -31,11 +31,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restaurar sessão do localStorage ao montar
+  // Restaurar sessão do localStorage ao montar e sincronizar com o backend
   useEffect(() => {
     const stored = getStoredUser();
     if (stored && checkAuth()) {
       setUser(stored);
+      
+      // Sincronizar dados atualizados do usuário (como roles) do banco de dados
+      const token = localStorage.getItem("arpe-access-token");
+      if (token) {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+        fetch(`${API_BASE}/api/v1/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => {
+            if (res.ok) return res.json();
+            throw new Error("Não foi possível validar a sessão com o servidor.");
+          })
+          .then((freshUser: AuthUser) => {
+            console.log("[AuthContext] Usuário sincronizado com o banco de dados:", freshUser);
+            setUser(freshUser);
+            localStorage.setItem("arpe-user", JSON.stringify(freshUser));
+          })
+          .catch((err) => {
+            console.warn("[AuthContext] Falha ao sincronizar perfil com o backend:", err);
+          });
+      }
     }
     setIsLoading(false);
   }, []);

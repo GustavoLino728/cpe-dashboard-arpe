@@ -16,10 +16,11 @@ export interface AuthTokens {
 }
 
 export interface AuthUser {
-  id: number;
+  id: string | number;
   email: string;
   name: string;
   is_active: boolean;
+  role: string;
 }
 
 export interface LoginCredentials {
@@ -116,7 +117,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthUser> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: credentials.email,
+        email: credentials.email,
         password: credentials.password,
       }),
     });
@@ -218,6 +219,7 @@ const MOCK_USER: AuthUser = {
   email: "usuario@arpe.pe.gov.br",
   name: "Usuário Demo",
   is_active: true,
+  role: "admin",
 };
 
 function handleMockLogin(credentials: LoginCredentials): AuthUser {
@@ -232,10 +234,18 @@ function handleMockLogin(credentials: LoginCredentials): AuthUser {
     token_type: "bearer",
   };
 
+  let role = "admin";
+  if (credentials.email.startsWith("coordenador")) {
+    role = "coordenador";
+  } else if (credentials.email.startsWith("servidor")) {
+    role = "servidor";
+  }
+
   const mockUser: AuthUser = {
     ...MOCK_USER,
     email: credentials.email,
     name: credentials.email.split("@")[0].replace(/[._-]/g, " "),
+    role: role,
   };
 
   saveTokens(mockTokens);

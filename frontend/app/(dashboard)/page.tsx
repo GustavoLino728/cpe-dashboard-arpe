@@ -13,6 +13,13 @@ export default function DashboardHome() {
     scope,
     selectedCoord,
     setSelectedCoord,
+    selectedProject,
+    setSelectedProject,
+    selectedMacro,
+    setSelectedMacro,
+    projetos,
+    macroprocessos,
+    resetFilters,
     mounted,
     loading,
     error,
@@ -45,26 +52,82 @@ export default function DashboardHome() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Filtro por Coordenadoria */}
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* Filtros */}
+      <div className="flex items-end gap-4 flex-wrap">
         {scope === "coordenadoria" && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="coordSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
+              Coordenadoria
+            </label>
+            <select
+              id="coordSelect"
+              value={selectedCoord}
+              onChange={(e) => setSelectedCoord(e.target.value)}
+              className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
+            >
+              <option value="todas">Todos</option>
+              {coordenadorias.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Filtro por Projeto */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="projectSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
+            Projeto
+          </label>
           <select
-            id="coordSelect"
-            value={selectedCoord}
-            onChange={(e) => setSelectedCoord(e.target.value)}
+            id="projectSelect"
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
             className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
           >
-            <option value="todas">Central — todas as coordenadorias</option>
-            {coordenadorias.map((c) => (
-              <option key={c} value={c}>
-                {c}
+            <option value="todos">Todos</option>
+            {projetos.map((p) => (
+              <option key={p} value={p}>
+                {p}
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Filtro por Macroprocessos (não implementado) */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="macroSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
+            Macroprocesso
+          </label>
+          <select
+            id="macroSelect"
+            value={selectedMacro}
+            onChange={(e) => setSelectedMacro(e.target.value)}
+            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
+          >
+            <option value="todos">Todos</option>
+            {macroprocessos.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Botão Redefinir Filtros */}
+        <button
+          onClick={resetFilters}
+          className="font-sans text-[13px] font-semibold text-teal hover:text-teal/80 border border-teal/20 hover:border-teal/40 rounded-lg py-2 px-4 cursor-pointer hover:bg-teal/5 transition-all duration-150 shadow-sm h-[38px] flex items-center justify-center"
+        >
+          Redefinir Filtros
+        </button>
+
+        {loading && (
+          <span className="text-[12px] text-ink-soft ml-auto" id="loadingNote">
+            Carregando dados...
+          </span>
         )}
-        <span className="text-[12px] text-ink-soft" id="viewNote">
-          {loading ? "Carregando dados..." : metrics.viewNote}
-        </span>
       </div>
 
       {/* Grid de Cards de KPI */}
