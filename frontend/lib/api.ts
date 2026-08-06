@@ -55,6 +55,13 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
         const body = await res.json();
         detail = body.detail ?? detail;
       } catch {}
+
+      if (res.status === 401) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("api-unauthorized"));
+        }
+      }
+
       throw new ApiError(detail, res.status);
     }
 

@@ -54,12 +54,7 @@ async def check_deadlines_job():
             users_to_notify = result_users.scalars().all()
 
             if not users_to_notify:
-                fallback_query = select(User).where(
-                    User.is_active == True,
-                    User.role.in_(["admin", "coordenador"])
-                )
-                result_users = await db.execute(fallback_query)
-                users_to_notify = result_users.scalars().all()
+                continue
 
             for user in users_to_notify:
                 await create_notification(

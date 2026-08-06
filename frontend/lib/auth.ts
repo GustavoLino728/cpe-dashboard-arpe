@@ -160,6 +160,11 @@ async function fetchCurrentUser(accessToken: string): Promise<AuthUser> {
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("api-unauthorized"));
+      }
+    }
     throw new AuthError("Não foi possível obter dados do usuário", res.status);
   }
 

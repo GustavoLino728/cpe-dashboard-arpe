@@ -19,7 +19,6 @@ import {
   Trash2,
   Lock,
   ShieldAlert,
-  CheckCircle,
   XCircle,
   X,
   Loader2,
@@ -29,41 +28,10 @@ import {
   Search,
 } from "lucide-react";
 
-const MOCK_USERS_LIST: ApiUser[] = [
-  {
-    id: "1",
-    name: "Administrador Geral",
-    email: "admin@arpe.pe.gov.br",
-    role: "admin",
-    is_active: true,
-    created_at: "2026-08-06T10:00:00Z",
-    updated_at: "2026-08-06T10:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Carlos Coordenador",
-    email: "coordenador.carlos@arpe.pe.gov.br",
-    role: "coordenador",
-    is_active: true,
-    created_at: "2026-08-06T10:05:00Z",
-    updated_at: "2026-08-06T10:05:00Z",
-  },
-  {
-    id: "3",
-    name: "Lucas Servidor",
-    email: "servidor.lucas@arpe.pe.gov.br",
-    role: "servidor",
-    is_active: true,
-    created_at: "2026-08-06T10:10:00Z",
-    updated_at: "2026-08-06T10:10:00Z",
-  },
-];
-
 export default function UsuariosPage() {
   const { user } = useAuth();
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUsingMock, setIsUsingMock] = useState(false);
   
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,17 +63,17 @@ export default function UsuariosPage() {
     }
   }, [feedback]);
 
-  // Load users from API, fallback to Mock if backend is offline
+  // Load users from API
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await fetchUsers();
       setUsers(data);
-      setIsUsingMock(false);
     } catch (err) {
-      console.warn("[Usuarios] Erro ao carregar usuários da API, usando Mock local.", err);
-      setUsers(MOCK_USERS_LIST);
-      setIsUsingMock(true);
+      console.error("[Usuarios] Erro ao carregar usuários da API", err);
+      const msg = err instanceof ApiError ? err.message : "Erro ao conectar com o servidor para carregar usuários.";
+      setFeedback({ type: "error", message: msg });
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -150,56 +118,19 @@ export default function UsuariosPage() {
     try {
       if (modalMode === "create") {
         const payload: ApiUserCreate = { name, email, password, role };
-        
-        if (isUsingMock) {
-          // Simulate locally
-          const newUser: ApiUser = {
-            id: `mock-${Date.now()}`,
-            name,
-            email,
-            role,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          setUsers((prev) => [newUser, ...prev]);
-          setFeedback({ type: "success", message: "Usuário mock criado com sucesso (Modo Demo)." });
-        } else {
-          await createUser(payload);
-          setFeedback({ type: "success", message: "Usuário criado com sucesso!" });
-          await loadUsers();
-        }
+        await createUser(payload);
+        setFeedback({ type: "success", message: "Usuário criado com sucesso!" });
       } else {
-        // Edit mode
         if (!selectedUser) return;
         const payload: ApiUserUpdate = { name, role, is_active: isActive };
         if (password) {
-          payload.password = password; // only include if reset is typed
+          payload.password = password;
         }
-
-        if (isUsingMock) {
-          // Simulate locally
-          setUsers((prev) =>
-            prev.map((u) =>
-              u.id === selectedUser.id
-                ? {
-                    ...u,
-                    name,
-                    role,
-                    is_active: isActive,
-                    updated_at: new Date().toISOString(),
-                  }
-                : u
-            )
-          );
-          setFeedback({ type: "success", message: "Usuário mock atualizado com sucesso (Modo Demo)." });
-        } else {
-          await updateUser(selectedUser.id, payload);
-          setFeedback({ type: "success", message: "Usuário atualizado com sucesso!" });
-          await loadUsers();
-        }
+        await updateUser(selectedUser.id, payload);
+        setFeedback({ type: "success", message: "Usuário atualizado com sucesso!" });
       }
       setIsModalOpen(false);
+      await loadUsers();
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Erro ao salvar alterações do usuário.";
       setFeedback({ type: "error", message: msg });
@@ -216,14 +147,9 @@ export default function UsuariosPage() {
     
     setFeedback(null);
     try {
-      if (isUsingMock) {
-        setUsers((prev) => prev.filter((u) => u.id !== targetUser.id));
-        setFeedback({ type: "success", message: "Usuário mock excluído com sucesso (Modo Demo)." });
-      } else {
-        await deleteUser(targetUser.id);
-        setFeedback({ type: "success", message: "Usuário removido com sucesso!" });
-        await loadUsers();
-      }
+      await deleteUser(targetUser.id);
+      setFeedback({ type: "success", message: "Usuário removido com sucesso!" });
+      await loadUsers();
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Erro ao remover usuário.";
       setFeedback({ type: "error", message: msg });
@@ -278,16 +204,6 @@ export default function UsuariosPage() {
           <UserPlus className="w-4 h-4" /> Novo usuário
         </button>
       </div>
-
-      {/* Demo Warning Banner */}
-      {isUsingMock && (
-        <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg p-3.5 text-[12.5px] leading-normal">
-          <span className="text-[14px]">⚠️</span>
-          <span>
-            <strong>Modo Demonstração:</strong> O servidor de banco de dados está indisponível ou offline. As alterações nesta tela serão mantidas apenas em memória temporária.
-          </span>
-        </div>
-      )}
 
       {/* Feedback Alerts */}
       {feedback && (
