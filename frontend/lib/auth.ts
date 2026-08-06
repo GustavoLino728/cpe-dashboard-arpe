@@ -68,6 +68,11 @@ function saveTokens(tokens: AuthTokens): void {
   try {
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+    
+    // Salvar em cookie para o Next.js middleware (server-side)
+    if (typeof window !== "undefined") {
+      document.cookie = `arpe-access-token=${tokens.access_token}; path=/; SameSite=Strict; max-age=${8 * 3600}`;
+    }
   } catch {
     console.warn("[Auth] Não foi possível salvar tokens no localStorage.");
   }
@@ -86,6 +91,11 @@ function clearAuth(): void {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
+    
+    // Limpar cookie
+    if (typeof window !== "undefined") {
+      document.cookie = "arpe-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
+    }
   } catch {
     // silently ignore
   }

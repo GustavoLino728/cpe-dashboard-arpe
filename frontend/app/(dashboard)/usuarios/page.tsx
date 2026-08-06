@@ -33,29 +33,24 @@ export default function UsuariosPage() {
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Search state
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Modal / Form state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
 
-  // Form Fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"servidor" | "coordenador" | "admin">("servidor");
   const [isActive, setIsActive] = useState(true);
 
-  // Status message states
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Auto-hide feedback after 5 seconds
   useEffect(() => {
     if (feedback) {
       const timer = setTimeout(() => setFeedback(null), 5000);

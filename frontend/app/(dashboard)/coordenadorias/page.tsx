@@ -9,7 +9,6 @@ import {
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export default function CoordenadoriasPage() {
-  // ---- Estado de dados da API ----
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +30,6 @@ export default function CoordenadoriasPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [loadData]);
 
@@ -60,7 +58,6 @@ export default function CoordenadoriasPage() {
     });
   }, [coordenadorias, atividades]);
 
-  // ---- Estado de erro ----
   if (error && !loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -80,7 +77,6 @@ export default function CoordenadoriasPage() {
     );
   }
 
-  // ---- Loading skeleton ----
   if (loading) {
     return (
       <div className="grid grid-cols-3 gap-[14px] max-xl:grid-cols-2 max-sm:grid-cols-1">
@@ -103,7 +99,6 @@ export default function CoordenadoriasPage() {
     );
   }
 
-  // ---- Estado vazio ----
   if (coordData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-20">

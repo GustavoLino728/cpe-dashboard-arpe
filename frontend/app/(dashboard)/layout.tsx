@@ -22,7 +22,6 @@ export default function DashboardLayout({
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Enquanto verifica auth, mostra loading sutil
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
@@ -31,7 +30,6 @@ export default function DashboardLayout({
     );
   }
 
-  // Se não autenticado, não renderiza nada (redirect em andamento)
   if (!isAuthenticated) return null;
 
   return (
