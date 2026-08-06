@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useDashboard } from "@/components/DashboardProvider";
 import {
   fetchAtividades,
+  fetchProjectsSimple,
   extractCoordenadorias,
   buildCoordColors,
   statusMap,
@@ -15,17 +16,27 @@ export function useDashboardData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [selectedProject, setSelectedProject] = useState<string>("todos");
+  const [selectedMacro, setSelectedMacro] = useState<string>("todos");
+
+  const [allProjects, setAllProjects] = useState<{ id: string; name: string }[]>([]);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchAtividades();
-      setAtividades(data);
+      const [activitiesData, projectsData] = await Promise.all([
+        fetchAtividades(),
+        fetchProjectsSimple(),
+      ]);
+      setAtividades(activitiesData);
+      setAllProjects(projectsData);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "Erro ao carregar dados";
       setError(msg);
       setAtividades([]);
+      setAllProjects([]);
     } finally {
       setLoading(false);
     }
@@ -45,15 +56,31 @@ export function useDashboardData() {
     [coordenadorias]
   );
 
+  const projetos = useMemo(() => {
+    return allProjects.map((p) => p.name).sort();
+  }, [allProjects]);
+
+  const macroprocessos = ["Macroprocesso A", "Macroprocesso B", "Macroprocesso C"];
+
   const filteredData = useMemo(() => {
-    if (scope === "pessoal") {
-      return atividades;
+    let data = atividades;
+
+    if (scope !== "pessoal" && selectedCoord !== "todas") {
+      data = data.filter((d) => d.coordenadoria === selectedCoord);
     }
-    if (selectedCoord === "todas") {
-      return atividades;
+
+    if (selectedProject !== "todos") {
+      data = data.filter((d) => d.projeto === selectedProject);
     }
-    return atividades.filter((d) => d.coordenadoria === selectedCoord);
-  }, [scope, selectedCoord, atividades]);
+
+    return data;
+  }, [scope, selectedCoord, selectedProject, selectedMacro, atividades]);
+
+  const resetFilters = useCallback(() => {
+    setSelectedCoord("todas");
+    setSelectedProject("todos");
+    setSelectedMacro("todos");
+  }, [setSelectedCoord]);
 
   const total = filteredData.length;
   const done = filteredData.filter((d) => d.status === "ok").length;
@@ -130,6 +157,13 @@ export function useDashboardData() {
     scope,
     selectedCoord,
     setSelectedCoord,
+    selectedProject,
+    setSelectedProject,
+    selectedMacro,
+    setSelectedMacro,
+    projetos,
+    macroprocessos,
+    resetFilters,
     mounted,
     loading,
     error,

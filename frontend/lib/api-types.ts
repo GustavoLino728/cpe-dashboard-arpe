@@ -23,6 +23,14 @@ export interface ApiProject {
   activities: ApiActivity[];
 }
 
+export interface ApiProjectSimple {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ApiProjectSummary {
   projeto: string;
   data_referencia: string;
@@ -82,10 +90,36 @@ export interface Atividade {
   progresso: number;
   prazo: string;
   status: StatusType;
+  projeto?: string;
 }
 
 export interface StatusDetail {
   label: string;
   corTailwind: string;
   corHex: string;
+}
+
+export interface ApiUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "servidor" | "coordenador" | "admin";
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiUserCreate {
+  name: string;
+  email: string;
+  password: string;
+  role: "servidor" | "coordenador" | "admin";
+}
+
+export interface ApiUserUpdate {
+  name?: string;
+  email?: string;
+  role?: "servidor" | "coordenador" | "admin";
+  is_active?: boolean;
+  password?: string;
 }

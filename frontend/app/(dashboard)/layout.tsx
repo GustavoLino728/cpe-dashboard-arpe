@@ -1,13 +1,39 @@
-import React, { Suspense } from "react";
+"use client";
+
+import React, { Suspense, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { DashboardProvider } from "@/components/DashboardProvider";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Enquanto verifica auth, mostra loading sutil
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-bg">
+        <Loader2 className="w-6 h-6 text-teal animate-spin" />
+      </div>
+    );
+  }
+
+  // Se não autenticado, não renderiza nada (redirect em andamento)
+  if (!isAuthenticated) return null;
+
   return (
     <Suspense fallback={null}>
       <DashboardProvider>
@@ -26,3 +52,4 @@ export default function DashboardLayout({
     </Suspense>
   );
 }
+
