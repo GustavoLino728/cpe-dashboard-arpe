@@ -14,12 +14,10 @@ export default function PlanilhasPage() {
     uploading,
     uploadError,
     uploadSuccess,
-    fileInputRef,
     setUploadError,
     setUploadSuccess,
     loadData,
-    handleUploadClick,
-    handleFileChange,
+    handleSync,
     handleDelete,
   } = usePlanilhasData();
 
@@ -30,11 +28,9 @@ export default function PlanilhasPage() {
         uploading={uploading}
         uploadError={uploadError}
         uploadSuccess={uploadSuccess}
-        fileInputRef={fileInputRef}
         setUploadError={setUploadError}
         setUploadSuccess={setUploadSuccess}
-        handleUploadClick={handleUploadClick}
-        handleFileChange={handleFileChange}
+        handleSync={handleSync}
       />
 
       {/* Erro de carregamento geral */}
