@@ -16,7 +16,15 @@ from app.domain.projects.excel_parser import parse_sheet_activities
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
+import unicodedata
+
 logger = logging.getLogger("Gestão de Projetos")
+
+def normalize_sheet_title(title: str) -> str:
+    # Remove acentos e converte para maiúsculo
+    nfkd = unicodedata.normalize('NFKD', title)
+    normalized = "".join([c for c in nfkd if not unicodedata.combining(c)])
+    return normalized.strip().upper()
 
 def fetch_google_sheets_data(spreadsheet_id: str) -> list[dict]:
     CREDENTIALS_FILE = "credentials.json"
@@ -45,6 +53,11 @@ def fetch_google_sheets_data(spreadsheet_id: str) -> list[dict]:
         parsed_projects = []
         for sheet in sheets:
             sheet_title = sheet['properties']['title']
+            normalized_title = normalize_sheet_title(sheet_title)
+            
+            # Filtra apenas as abas de interesse do Bloco 1 e Bloco 2
+            if normalized_title not in ["FASE DE TRANSICAO - BLOCO 1", "FASE DE TRANSICAO - BLOCO 2"]:
+                continue
             
             # Obtém todos os valores da aba atual
             result = service.spreadsheets().values().get(
@@ -98,10 +111,17 @@ async def save_extracted_data(session: AsyncSession, parsed_projects: list[dict]
                 department=row["department"],
                 start_date=row["start_date"],
                 deadline=row["deadline"],
-                working_days=row["working_days"],
+                working_days=row.get("working_days"),
                 new_date=row["new_date"],
                 status=row["status"],
-                observations=row["observations"]
+                observations=row["observations"],
+                group_item=row.get("group_item"),
+                contract=row.get("contract"),
+                step_number=row.get("step_number"),
+                actual_start_date=row.get("actual_start_date"),
+                delay_justification_problem=row.get("delay_justification_problem"),
+                delay_justification_action=row.get("delay_justification_action"),
+                delay_justification_responsible=row.get("delay_justification_responsible")
             )
             session.add(activity)
             

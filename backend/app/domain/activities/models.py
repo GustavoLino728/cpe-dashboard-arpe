@@ -23,5 +23,13 @@ class Activity(Base, TimestampMixin):
     new_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="Não Iniciado")
     observations: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    group_item: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contract: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    step_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    actual_start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    delay_justification_problem: Mapped[str | None] = mapped_column(Text, nullable=True)
+    delay_justification_action: Mapped[str | None] = mapped_column(Text, nullable=True)
+    delay_justification_responsible: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     project: Mapped["Project"] = relationship("Project", back_populates="activities")
