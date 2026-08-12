@@ -16,14 +16,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
-    // Read theme from localStorage or fallback to light
     try {
       const savedTheme = localStorage.getItem("smpe-theme") as Theme | null;
       if (savedTheme === "dark" || savedTheme === "light") {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setThemeState(savedTheme);
       } else {
-        // Optional: Auto detect system preference if no user preference is saved
         const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         setThemeState(systemPrefersDark ? "dark" : "light");
       }
@@ -40,7 +37,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       console.warn("Could not save theme to localStorage:", e);
     }
 
-    // Apply attribute and class to html element
     const root = document.documentElement;
     root.setAttribute("data-theme", newTheme);
     if (newTheme === "dark") {

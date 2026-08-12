@@ -11,6 +11,8 @@ import {
   ApiUser,
   ApiUserCreate,
   ApiUserUpdate,
+  ApiNotification,
+  ApiUnreadCount,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
@@ -185,5 +187,34 @@ export async function updateUser(
 export async function deleteUser(userId: string): Promise<void> {
   await apiFetch<void>(`/api/v1/users/${userId}`, {
     method: "DELETE",
+  });
+}
+
+export async function fetchNotifications(
+  onlyUnread = false
+): Promise<ApiNotification[]> {
+  return apiFetch<ApiNotification[]>(
+    `/api/v1/notifications?only_unread=${onlyUnread}`
+  );
+}
+
+export async function fetchUnreadCount(): Promise<ApiUnreadCount> {
+  return apiFetch<ApiUnreadCount>("/api/v1/notifications/unread-count");
+}
+
+export async function markNotificationAsRead(
+  notificationId: string
+): Promise<ApiNotification> {
+  return apiFetch<ApiNotification>(
+    `/api/v1/notifications/${notificationId}/read`,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export async function markAllNotificationsAsRead(): Promise<void> {
+  await apiFetch<void>("/api/v1/notifications/read-all", {
+    method: "PATCH",
   });
 }

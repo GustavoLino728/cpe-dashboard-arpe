@@ -1,7 +1,3 @@
-"""
-Uso: python seed.py
-Insere um usuário admin inicial caso ainda não exista.
-"""
 import asyncio
 
 from sqlalchemy import select
