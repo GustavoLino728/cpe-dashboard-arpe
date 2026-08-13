@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   fetchProjects,
-  uploadPlanilha,
+  syncGoogleSheets,
   deleteProject as deleteProjectApi,
   ApiProject,
 } from "@/lib/api";
@@ -11,10 +11,9 @@ export function usePlanilhasData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(false); // keeping name 'uploading' to match parent state/UI spinner naming safely
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -36,33 +35,23 @@ export function usePlanilhasData() {
     loadData();
   }, [loadData]);
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleSync = async () => {
     setUploading(true);
     setUploadError(null);
     setUploadSuccess(null);
 
     try {
-      const result = await uploadPlanilha(file);
+      const result = await syncGoogleSheets();
       setUploadSuccess(
-        `Planilha "${file.name}" importada com sucesso! ${result.length} projeto(s) processado(s).`
+        `Planilha sincronizada com sucesso! ${result.length} projeto(s) processado(s).`
       );
       await loadData();
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "Erro ao importar planilha";
+        err instanceof Error ? err.message : "Erro ao sincronizar planilha";
       setUploadError(msg);
     } finally {
       setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     }
   };
 
@@ -92,12 +81,10 @@ export function usePlanilhasData() {
     uploading,
     uploadError,
     uploadSuccess,
-    fileInputRef,
     setUploadError,
     setUploadSuccess,
     loadData,
-    handleUploadClick,
-    handleFileChange,
+    handleSync,
     handleDelete,
   };
 }

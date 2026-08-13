@@ -36,6 +36,10 @@ async def lifespan(app: FastAPI):
     from app.domain.projects.models import Project
     from app.domain.users.models import User
     from app.domain.notifications.models import Notification
+    
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    import asyncio
+    from app.domain.projects.services import sync_projects_from_google_sheets
 
     try:
         async with engine.begin() as conn:
@@ -44,7 +48,28 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Erro ao inicializar tabelas do banco de dados: {str(e)}")
 
+    # Configuração e inicialização do agendador automático (15 minutos)
+    scheduler = AsyncIOScheduler()
+    
+    # Adiciona o job para rodar a cada 15 minutos
+    scheduler.add_job(
+        sync_projects_from_google_sheets, 
+        'interval', 
+        minutes=15, 
+        id='google_sheets_sync_job',
+        replace_existing=True
+    )
+    scheduler.start()
+    logger.info("⏰ Agendador de sincronização automática ativado (intervalo: 15 minutos)")
+    
+    # Dispara uma primeira sincronização em background logo após o startup para atualizar os dados
+    asyncio.create_task(sync_projects_from_google_sheets())
+
     yield
+    
+    # Desliga o agendador ao encerrar o servidor
+    scheduler.shutdown()
+    logger.info("⏰ Agendador de sincronização encerrado")
     logger.info("🛑 Gestão de Projetos - API encerrado")
 
 

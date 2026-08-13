@@ -104,6 +104,12 @@ export async function uploadPlanilha(file: File): Promise<ApiProject[]> {
   });
 }
 
+export async function syncGoogleSheets(): Promise<ApiProject[]> {
+  return apiFetch<ApiProject[]>("/api/v1/projects/sync", {
+    method: "POST",
+  });
+}
+
 export async function deleteProject(projectId: string): Promise<void> {
   await apiFetch<void>(`/api/v1/projects/${projectId}`, {
     method: "DELETE",
