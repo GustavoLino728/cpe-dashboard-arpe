@@ -2,6 +2,7 @@ import os
 import re
 import logging
 import asyncio
+import json
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -27,22 +28,39 @@ def normalize_sheet_title(title: str) -> str:
     return normalized.strip().upper()
 
 def fetch_google_sheets_data(spreadsheet_id: str) -> list[dict]:
-    CREDENTIALS_FILE = "credentials.json"
-    if not os.path.exists(CREDENTIALS_FILE):
-        raise FileNotFoundError(
-            "Arquivo credentials.json não encontrado no backend. "
-            "Por favor, configure a Conta de Serviço no Google Cloud Console "
-            "e salve as credenciais como 'credentials.json' na pasta do backend."
-        )
-        
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
     
-    try:
-        # Carrega credenciais da Conta de Serviço
-        creds = service_account.Credentials.from_service_account_file(
-            CREDENTIALS_FILE, scopes=SCOPES
+    CREDENTIALS_FILE = "credentials.json"
+    creds = None
+    
+    if os.path.exists(CREDENTIALS_FILE):
+        try:
+            creds = service_account.Credentials.from_service_account_file(
+                CREDENTIALS_FILE, scopes=SCOPES
+            )
+            logger.info("Chave do Google carregada do arquivo credentials.json.")
+        except Exception as e:
+            logger.warning(f"Erro ao carregar credentials.json: {e}")
+
+    if not creds:
+        google_creds_env = settings.google_credentials or os.getenv("GOOGLE_CREDENTIALS")
+        if google_creds_env:
+            try:
+                creds_info = json.loads(google_creds_env)
+                creds = service_account.Credentials.from_service_account_info(
+                    creds_info, scopes=SCOPES
+                )
+                logger.info("Chave do Google carregada a partir das configurações (GOOGLE_CREDENTIALS).")
+            except Exception as e:
+                raise RuntimeError(f"Erro ao analisar as credenciais GOOGLE_CREDENTIALS: {e}")
+                
+    if not creds:
+        raise FileNotFoundError(
+            "Credenciais do Google não encontradas. Configure o arquivo 'credentials.json' "
+            "ou a variável de ambiente 'GOOGLE_CREDENTIALS' com o conteúdo do JSON da conta de serviço."
         )
         
+    try:
         # Constrói o serviço da API do Google Sheets
         service = build('sheets', 'v4', credentials=creds)
         

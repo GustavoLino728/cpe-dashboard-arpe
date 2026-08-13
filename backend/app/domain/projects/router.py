@@ -34,7 +34,7 @@ async def sync_google_sheets():
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
                 f"Erro ao sincronizar com Google Sheets: {str(e)}. "
-                "Verifique as variáveis de ambiente e o arquivo credentials.json."
+                "Verifique as variáveis de ambiente (incluindo GOOGLE_CREDENTIALS) e o arquivo credentials.json."
             )
         )
 
