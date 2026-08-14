@@ -123,3 +123,21 @@ export interface ApiUserUpdate {
   is_active?: boolean;
   password?: string;
 }
+
+export interface ApiCoordenadoria {
+  id: string;
+  name: string;
+  emails: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiCoordenadoriaCreate {
+  name: string;
+  emails: string[];
+}
+
+export interface ApiCoordenadoriaUpdate {
+  name?: string;
+  emails?: string[];
+}

@@ -119,7 +119,24 @@ async def save_extracted_data(session: AsyncSession, parsed_projects: list[dict]
             await session.execute(
                 delete(Activity).filter(Activity.project_id == project.id)
             )
-            
+        # 1.5. Ensure departments are registered as coordenadorias
+        unique_departments = set()
+        for row in activities_data:
+            if row.get("department"):
+                for dept in row["department"]:
+                    if dept and dept.strip():
+                        unique_departments.add(dept.strip())
+
+        if unique_departments:
+            from app.domain.coordenadorias.models import Coordenadoria
+            for dept_name in unique_departments:
+                coord_result = await session.execute(
+                    select(Coordenadoria).filter(Coordenadoria.name == dept_name)
+                )
+                if not coord_result.scalars().first():
+                    new_coord = Coordenadoria(name=dept_name, emails=[])
+                    session.add(new_coord)
+
         # 2. Save activities
         for row in activities_data:
             activity = Activity(

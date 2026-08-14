@@ -11,6 +11,9 @@ import {
   ApiUser,
   ApiUserCreate,
   ApiUserUpdate,
+  ApiCoordenadoria,
+  ApiCoordenadoriaCreate,
+  ApiCoordenadoriaUpdate,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
@@ -190,6 +193,37 @@ export async function updateUser(
 
 export async function deleteUser(userId: string): Promise<void> {
   await apiFetch<void>(`/api/v1/users/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchCoordenadorias(): Promise<ApiCoordenadoria[]> {
+  return apiFetch<ApiCoordenadoria[]>("/api/v1/coordenadorias");
+}
+
+export async function createCoordenadoria(
+  data: ApiCoordenadoriaCreate
+): Promise<ApiCoordenadoria> {
+  return apiFetch<ApiCoordenadoria>("/api/v1/coordenadorias", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCoordenadoria(
+  id: string,
+  data: ApiCoordenadoriaUpdate
+): Promise<ApiCoordenadoria> {
+  return apiFetch<ApiCoordenadoria>(`/api/v1/coordenadorias/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCoordenadoria(id: string): Promise<void> {
+  await apiFetch<void>(`/api/v1/coordenadorias/${id}`, {
     method: "DELETE",
   });
 }

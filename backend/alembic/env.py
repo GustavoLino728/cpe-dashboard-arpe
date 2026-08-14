@@ -10,6 +10,7 @@ from app.domain.projects import models as project_models
 from app.domain.activities import models as activity_models
 from app.domain.users import models as users_models
 from app.domain.notifications import models as notifications_models
+from app.domain.coordenadorias import models as coordenadorias_models
 
 # O Alembic precisa de uma conexão síncrona (psycopg2). Convertemos a URL do asyncpg.
 sync_db_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
