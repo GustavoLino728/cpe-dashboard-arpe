@@ -89,13 +89,12 @@ export default function LoginPage() {
       </button>
 
       {/* Logo ARPE — centralizado acima do card */}
-      <div className="flex items-center gap-2.5 mb-8 select-none">
-        <span className="w-[32px] h-[32px] rounded-[9px] bg-teal flex items-center justify-center text-[15px] font-bold text-white">
-          A
-        </span>
-        <span className="font-display font-bold text-[19px] text-ink tracking-[0.2px]">
-          ARPE Painel
-        </span>
+      <div className="flex items-center mb-8 select-none">
+        <img
+          src={theme === "dark" ? "/logo-arpe-negativo.png" : "/logo-arpe-positivo.png"}
+          alt="ARPE Painel"
+          className="h-[50px] w-auto object-contain"
+        />
       </div>
 
       {/* Card do formulário */}

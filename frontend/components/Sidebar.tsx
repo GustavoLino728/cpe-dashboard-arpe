@@ -33,11 +33,14 @@ export function Sidebar() {
   return (
     <aside className="bg-sidebar text-[#C3D0DC] py-5 flex flex-col w-[220px] shrink-0 border-r border-line/10 h-full overflow-y-auto max-lg:w-full max-lg:flex-row max-lg:overflow-x-auto max-lg:overflow-y-visible max-lg:h-auto max-lg:py-3 max-lg:px-4 max-lg:items-center max-lg:justify-between max-lg:border-r-0 max-lg:border-b select-none">
       {/* Logo */}
-      <div className="font-display font-bold text-[17px] text-white px-5 pb-6 tracking-[0.2px] flex items-center gap-2 max-lg:pb-0 max-lg:px-3">
-        <span className="w-[26px] h-[26px] rounded-[7px] bg-teal flex items-center justify-center text-[13px] font-bold text-white">
-          A
-        </span>
-        ARPE Painel
+      <div className="px-5 pb-6 flex items-center max-lg:pb-0 max-lg:px-3">
+        <Link href="/" className="flex items-center">
+          <img
+            src="/logo-arpe-negativo.png"
+            alt="ARPE Painel"
+            className="h-[32px] w-auto object-contain"
+          />
+        </Link>
       </div>
 
       {/* Navegação simples sem grupos */}
