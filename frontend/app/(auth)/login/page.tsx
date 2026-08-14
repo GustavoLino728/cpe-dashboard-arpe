@@ -91,9 +91,14 @@ export default function LoginPage() {
       {/* Logo ARPE — centralizado acima do card */}
       <div className="flex items-center mb-8 select-none">
         <img
-          src={theme === "dark" ? "/logo-arpe-negativo.png" : "/logo-arpe-positivo.png"}
+          src="/logo-arpe-positivo.png"
           alt="ARPE Painel"
-          className="h-[50px] w-auto object-contain"
+          className="h-[50px] w-auto object-contain dark:hidden"
+        />
+        <img
+          src="/logo-arpe-negativo.png"
+          alt="ARPE Painel"
+          className="h-[50px] w-auto object-contain hidden dark:block"
         />
       </div>
 
