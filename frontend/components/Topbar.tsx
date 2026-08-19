@@ -5,12 +5,14 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/ThemeProvider";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Sun, Moon, Check, ChevronDown } from "lucide-react";
-import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
+import { useDashboard } from "@/components/DashboardProvider";
+import { LogOut, Sun, Moon, Check, ChevronDown, Menu as MenuIcon } from "lucide-react";
+import { Menu as HeadlessMenu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 
 export function Topbar() {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const { toggleSidebar } = useDashboard();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -46,10 +48,17 @@ export function Topbar() {
     : "";
 
   return (
-    <header className="flex justify-between items-start flex-wrap gap-4 select-none">
-      {/* Esquerda: título da visão + tabs */}
-      <div className="flex flex-col gap-2">
-        <div>
+    <header className="flex justify-between items-center flex-wrap gap-4 select-none">
+      {/* Esquerda: título da visão + tabs com botão sanduíche */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggleSidebar}
+          aria-label="Abrir menu"
+          className="p-1.5 rounded-lg text-ink hover:text-teal hover:bg-line/10 dark:hover:bg-line/5 transition-colors focus:outline-none border-none bg-transparent cursor-pointer flex items-center justify-center"
+        >
+          <MenuIcon className="w-5.5 h-5.5" />
+        </button>
+        <div className="flex flex-col">
           <h1 className="font-display font-bold text-[20px] text-ink leading-tight">
             {pageTitle}
           </h1>
@@ -63,7 +72,7 @@ export function Topbar() {
 
       {/* Direita: Menu suspenso do Usuário */}
       <div className="flex items-center gap-4 text-[13px] text-ink-soft">
-        <Menu as="div" className="relative inline-block text-left">
+        <HeadlessMenu as="div" className="relative inline-block text-left">
           <MenuButton className="flex items-center gap-2.5 cursor-pointer rounded-lg p-1.5 hover:bg-line/10 dark:hover:bg-line/5 transition-colors focus:outline-none select-none border-none bg-transparent text-left">
             <div className="w-8 h-8 rounded-full bg-teal/15 text-teal flex items-center justify-center text-[13px] font-bold select-none uppercase">
               {user?.name?.charAt(0) ?? "U"}
@@ -125,7 +134,7 @@ export function Topbar() {
               )}
             </MenuItem>
           </MenuItems>
-        </Menu>
+        </HeadlessMenu>
       </div>
     </header>
   );
