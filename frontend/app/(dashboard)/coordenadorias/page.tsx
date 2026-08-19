@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
 import {
   fetchAtividades,
   extractCoordenadorias,
@@ -10,6 +11,8 @@ import {
   deleteCoordenadoria,
   Atividade,
   ApiCoordenadoria,
+  cleanCoordenadoriaName,
+  isCombinedSector,
 } from "@/lib/api";
 import {
   AlertTriangle,
@@ -69,7 +72,7 @@ export default function CoordenadoriasPage() {
 
   // Get coordination names from database
   const dbCoordNames = useMemo(
-    () => coordenadoriasDb.map((c) => c.name),
+    () => coordenadoriasDb.map((c) => cleanCoordenadoriaName(c.name)).filter((name) => !isCombinedSector(name)),
     [coordenadoriasDb]
   );
 
@@ -82,7 +85,7 @@ export default function CoordenadoriasPage() {
   // Combine DB data and excel stats
   const coordData = useMemo(() => {
     return mergedCoordNames.map((name) => {
-      const dbCoord = coordenadoriasDb.find((c) => c.name === name);
+      const dbCoord = coordenadoriasDb.find((c) => cleanCoordenadoriaName(c.name) === name);
       const emails = dbCoord ? dbCoord.emails : [];
       const dbId = dbCoord ? dbCoord.id : null;
 
@@ -264,9 +267,12 @@ export default function CoordenadoriasPage() {
             >
               <div>
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-display font-semibold text-[14.5px] text-ink select-none">
+                  <Link
+                    href={`/atividades?coordenadoria=${encodeURIComponent(data.name)}`}
+                    className="font-display font-semibold text-[14.5px] text-ink hover:text-teal hover:underline transition-colors"
+                  >
                     {data.name}
-                  </h3>
+                  </Link>
                   <button
                     onClick={() => handleOpenEdit({ id: data.id, name: data.name, emails: data.emails })}
                     className="text-ink-soft hover:text-teal cursor-pointer p-1 rounded hover:bg-line/30 transition-colors"

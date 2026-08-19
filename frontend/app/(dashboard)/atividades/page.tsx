@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { ActivityTable } from "@/components/ActivityTable";
 import {
   fetchAtividades,
@@ -11,9 +12,19 @@ import {
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export default function AtividadesPage() {
+  const searchParams = useSearchParams();
+  const coordParam = searchParams.get("coordenadoria");
+
   const [search, setSearch] = useState("");
 
   const [selectedCoord, setSelectedCoord] = useState<string>("todas");
+
+  // Sync state with search parameter when it is present
+  useEffect(() => {
+    if (coordParam) {
+      setSelectedCoord(coordParam);
+    }
+  }, [coordParam]);
   const [selectedProject, setSelectedProject] = useState<string>("todos");
 
   const [atividades, setAtividades] = useState<Atividade[]>([]);
