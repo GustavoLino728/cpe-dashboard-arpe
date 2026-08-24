@@ -14,7 +14,6 @@ import {
   ApiCoordenadoria,
   ApiCoordenadoriaCreate,
   ApiCoordenadoriaUpdate,
-  ApiActivity,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
@@ -321,5 +320,34 @@ export async function updateCoordenadoria(
 export async function deleteCoordenadoria(id: string): Promise<void> {
   await apiFetch<void>(`/api/v1/coordenadorias/${id}`, {
     method: "DELETE",
+  });
+}
+
+export async function fetchNotifications(
+  onlyUnread = false
+): Promise<ApiNotification[]> {
+  return apiFetch<ApiNotification[]>(
+    `/api/v1/notifications?only_unread=${onlyUnread}`
+  );
+}
+
+export async function fetchUnreadCount(): Promise<ApiUnreadCount> {
+  return apiFetch<ApiUnreadCount>("/api/v1/notifications/unread-count");
+}
+
+export async function markNotificationAsRead(
+  notificationId: string
+): Promise<ApiNotification> {
+  return apiFetch<ApiNotification>(
+    `/api/v1/notifications/${notificationId}/read`,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export async function markAllNotificationsAsRead(): Promise<void> {
+  await apiFetch<void>("/api/v1/notifications/read-all", {
+    method: "PATCH",
   });
 }
