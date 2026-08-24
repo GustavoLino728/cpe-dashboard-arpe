@@ -14,6 +14,9 @@ import {
   ApiCoordenadoria,
   ApiCoordenadoriaCreate,
   ApiCoordenadoriaUpdate,
+  ApiActivity,
+  ApiNotification,
+  ApiUnreadCount,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
