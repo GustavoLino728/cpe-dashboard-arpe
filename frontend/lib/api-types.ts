@@ -143,3 +143,19 @@ export interface ApiCoordenadoriaUpdate {
   name?: string;
   emails?: string[];
 }
+
+export interface ApiNotification {
+  id: string;
+  user_id: string;
+  activity_id: string | null;
+  title: string;
+  content: string;
+  is_read: boolean;
+  type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiUnreadCount {
+  count: number;
+}
