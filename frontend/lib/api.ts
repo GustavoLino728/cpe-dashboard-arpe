@@ -14,6 +14,7 @@ import {
   ApiCoordenadoria,
   ApiCoordenadoriaCreate,
   ApiCoordenadoriaUpdate,
+  ApiActivity,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
@@ -137,6 +138,51 @@ export async function fetchAtividades(): Promise<Atividade[]> {
       projeto: proj.name,
     }))
   );
+}
+
+export interface PaginatedAtividades {
+  total: number;
+  page: number;
+  limit: number;
+  activities: Atividade[];
+  coordenadorias: string[];
+  projetos: string[];
+}
+
+export async function fetchPaginatedAtividades(
+  page = 1,
+  limit = 15,
+  search = "",
+  coordenadoria = "",
+  project = ""
+): Promise<PaginatedAtividades> {
+  const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+  if (search) params.append("search", search);
+  if (coordenadoria && coordenadoria !== "todas") params.append("coordenadoria", coordenadoria);
+  if (project && project !== "todos") params.append("project", project);
+
+  const res = await apiFetch<{
+    total: number;
+    page: number;
+    limit: number;
+    activities: ApiActivity[];
+    coordenadorias: string[];
+    projetos: string[];
+  }>(`/api/v1/projects/activities/paginated?${params.toString()}`);
+
+  return {
+    total: res.total,
+    page: res.page,
+    limit: res.limit,
+    activities: res.activities.map((act) => ({
+      ...mapApiToAtividade(act),
+      projeto: (act as any).project_name ?? "—",
+    })),
+    coordenadorias: res.coordenadorias,
+    projetos: res.projetos,
+  };
 }
 
 export async function fetchProjects(): Promise<ApiProject[]> {

@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { ActivityTable } from "@/components/ActivityTable";
 import {
-  fetchAtividades,
-  fetchProjectsSimple,
-  extractCoordenadorias,
+  fetchPaginatedAtividades,
   Atividade,
 } from "@/lib/api";
 import { AlertTriangle, RefreshCw } from "lucide-react";
@@ -16,88 +14,81 @@ export default function AtividadesPage() {
   const coordParam = searchParams.get("coordenadoria");
 
   const [search, setSearch] = useState("");
-
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCoord, setSelectedCoord] = useState<string>("todas");
+  const [selectedProject, setSelectedProject] = useState<string>("todos");
+  
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [atividades, setAtividades] = useState<Atividade[]>([]);
+  const [coordenadorias, setCoordenadorias] = useState<string[]>([]);
+  const [projetos, setProjetos] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const limit = 15;
 
   // Sync state with search parameter when it is present
   useEffect(() => {
     if (coordParam) {
       setSelectedCoord(coordParam);
+      setPage(1);
     }
   }, [coordParam]);
-  const [selectedProject, setSelectedProject] = useState<string>("todos");
 
-  const [atividades, setAtividades] = useState<Atividade[]>([]);
-  const [allProjects, setAllProjects] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [activitiesData, projectsData] = await Promise.all([
-        fetchAtividades(),
-        fetchProjectsSimple(),
-      ]);
-      setAtividades(activitiesData);
-      setAllProjects(projectsData);
+      const data = await fetchPaginatedAtividades(
+        page,
+        limit,
+        debouncedSearch,
+        selectedCoord,
+        selectedProject
+      );
+      setAtividades(data.activities);
+      setTotal(data.total);
+      setCoordenadorias(data.coordenadorias);
+      setProjetos(data.projetos);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "Erro ao carregar atividades";
       setError(msg);
       setAtividades([]);
-      setAllProjects([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, debouncedSearch, selectedCoord, selectedProject]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const coordenadorias = useMemo(
-    () => extractCoordenadorias(atividades),
-    [atividades]
-  );
+  const handleCoordChange = (val: string) => {
+    setSelectedCoord(val);
+    setPage(1);
+  };
 
-  const projetos = useMemo(
-    () => allProjects.map((p) => p.name).sort(),
-    [allProjects]
-  );
-
-
-
-  const filtered = useMemo(() => {
-    let data = atividades;
-
-    const term = search.toLowerCase().trim();
-    if (term) {
-      data = data.filter(
-        (d) =>
-          d.atividade.toLowerCase().includes(term) ||
-          d.coordenadoria.toLowerCase().includes(term) ||
-          d.responsavel.toLowerCase().includes(term) ||
-          (d.projeto && d.projeto.toLowerCase().includes(term))
-      );
-    }
-
-    if (selectedCoord !== "todas") {
-      data = data.filter((d) => d.coordenadoria === selectedCoord);
-    }
-
-    if (selectedProject !== "todos") {
-      data = data.filter((d) => d.projeto === selectedProject);
-    }
-
-    return data;
-  }, [search, atividades, selectedCoord, selectedProject]);
+  const handleProjectChange = (val: string) => {
+    setSelectedProject(val);
+    setPage(1);
+  };
 
   const resetFilters = () => {
     setSearch("");
     setSelectedCoord("todas");
     setSelectedProject("todos");
+    setPage(1);
   };
 
   if (error && !loading) {
@@ -142,7 +133,7 @@ export default function AtividadesPage() {
           <select
             id="coordSelect"
             value={selectedCoord}
-            onChange={(e) => setSelectedCoord(e.target.value)}
+            onChange={(e) => handleCoordChange(e.target.value)}
             className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
           >
             <option value="todas">Todos</option>
@@ -162,7 +153,7 @@ export default function AtividadesPage() {
           <select
             id="projectSelect"
             value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
+            onChange={(e) => handleProjectChange(e.target.value)}
             className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
           >
             <option value="todos">Todos</option>
@@ -173,8 +164,6 @@ export default function AtividadesPage() {
             ))}
           </select>
         </div>
-
-
 
         {/* Redefinir Filtros */}
         <button
@@ -201,9 +190,44 @@ export default function AtividadesPage() {
             Carregando atividades...
           </div>
         ) : (
-          <ActivityTable activities={filtered} />
+          <ActivityTable activities={atividades} />
         )}
       </div>
+
+      {/* Paginação */}
+      {total > limit && (
+        <div className="flex items-center justify-between border-t border-line/30 pt-4 px-1 select-none">
+          <span className="text-[12px] text-ink-soft">
+            Mostrando <span className="font-semibold text-ink">{(page - 1) * limit + 1}</span> a{" "}
+            <span className="font-semibold text-ink">{Math.min(page * limit, total)}</span> de{" "}
+            <span className="font-semibold text-ink">{total}</span> atividades
+          </span>
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className={`font-sans text-[12.5px] font-semibold py-1.5 px-3 rounded-lg border border-line bg-panel text-ink transition-all ${
+                page === 1
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-line/10 hover:text-teal active:scale-[0.98] cursor-pointer"
+              }`}
+            >
+              Anterior
+            </button>
+            <button
+              disabled={page * limit >= total}
+              onClick={() => setPage((p) => p + 1)}
+              className={`font-sans text-[12.5px] font-semibold py-1.5 px-3 rounded-lg border border-line bg-panel text-ink transition-all ${
+                page * limit >= total
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-line/10 hover:text-teal active:scale-[0.98] cursor-pointer"
+              }`}
+            >
+              Próximo
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

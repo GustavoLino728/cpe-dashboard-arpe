@@ -51,3 +51,35 @@ class ProjectSimpleOut(BaseModel):
 
 class GoogleSheetsSyncSchema(BaseModel):
     url: str
+
+
+class ActivityOutSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    project_id: UUID
+    project_name: str
+    description: str
+    sei_number: str | None = None
+    department: list[str] | None = None
+    start_date: date | None = None
+    deadline: date | None = None
+    working_days: int | None = None
+    new_date: date | None = None
+    status: str
+    observations: str | None = None
+    group_item: str | None = None
+    contract: str | None = None
+    step_number: str | None = None
+    actual_start_date: date | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class PaginatedActivitiesOut(BaseModel):
+    total: int
+    page: int
+    limit: int
+    activities: list[ActivityOutSchema]
+    coordenadorias: list[str]
+    projetos: list[str]

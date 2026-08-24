@@ -28,5 +28,10 @@ class TestExcelParser(unittest.TestCase):
         self.assertIsNone(parse_date("invalid-date"))
         self.assertIsNone(parse_date("32/13/2026"))
 
+    def test_parse_date_with_format_suffix(self):
+        self.assertEqual(parse_date("12/08/26 DD-MM-YYYY"), date(2026, 8, 12))
+        self.assertEqual(parse_date("12/08/26 DD/MM/YYYY"), date(2026, 8, 12))
+        self.assertEqual(parse_date("04/08/2026 DD-MM-YYYY"), date(2026, 8, 4))
+
 if __name__ == "__main__":
     unittest.main()

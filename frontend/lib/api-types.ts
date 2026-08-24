@@ -10,6 +10,10 @@ export interface ApiActivity {
   new_date: string | null;
   status: string;
   observations: string | null;
+  group_item: string | null;
+  contract: string | null;
+  step_number: string | null;
+  actual_start_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -93,6 +97,7 @@ export interface Atividade {
   projeto?: string;
   data_inicio?: string | null;
   data_fim?: string | null;
+  contrato?: string;
 }
 
 export interface StatusDetail {

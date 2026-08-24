@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, date
 
 def parse_date(val):
@@ -7,7 +8,21 @@ def parse_date(val):
         if isinstance(val, datetime):
             return val.date()
         return val
+        
     val_str = str(val).strip()
+    
+    # Prioritize 4-digit years over 2-digit years to avoid extraction overlap
+    match = re.search(r"(\d{4}[/\-]\d{1,2}[/\-]\d{1,2})", val_str)
+    if not match:
+        match = re.search(r"(\d{1,2}[/\-]\d{1,2}[/\-]\d{4})", val_str)
+    if not match:
+        match = re.search(r"(\d{1,2}[/\-]\d{1,2}[/\-]\d{2})", val_str)
+    if not match:
+        match = re.search(r"(\d{2}[/\-]\d{1,2}[/\-]\d{1,2})", val_str)
+        
+    if match:
+        val_str = match.group(1)
+        
     for fmt in (
         "%d/%m/%Y", "%d/%m/%y",
         "%d-%m-%Y", "%d-%m-%y",

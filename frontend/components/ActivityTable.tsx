@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { Atividade, formatDateShort } from "@/lib/api";
 import { StatusBadge } from "./StatusBadge";
-import { ProgressBar } from "./ProgressBar";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface ActivityTableProps {
   activities: Atividade[];
 }
 
-type SortField = "atividade" | "projeto" | "coordenadoria" | "responsavel" | "progresso" | "prazo" | "status";
+type SortField = "atividade" | "projeto" | "contrato" | "responsavel" | "data_inicio" | "data_fim" | "status";
 type SortDirection = "asc" | "desc";
 
 export function ActivityTable({ activities }: ActivityTableProps) {
@@ -31,12 +30,6 @@ export function ActivityTable({ activities }: ActivityTableProps) {
     sorted.sort((a, b) => {
       let valA: any = a[sortField as keyof Atividade] ?? "";
       let valB: any = b[sortField as keyof Atividade] ?? "";
-
-      if (sortField === "prazo") {
-        // Sort chronologically using ISO end date (data_fim) falling back to start date (data_inicio)
-        valA = a.data_fim ?? a.data_inicio ?? "";
-        valB = b.data_fim ?? b.data_inicio ?? "";
-      }
 
       if (typeof valA === "string" && typeof valB === "string") {
         return sortDirection === "asc"
@@ -81,10 +74,10 @@ export function ActivityTable({ activities }: ActivityTableProps) {
               Projeto {renderSortIcon("projeto")}
             </th>
             <th
-              onClick={() => handleSort("coordenadoria")}
+              onClick={() => handleSort("contrato")}
               className="text-[10.5px] uppercase tracking-wider text-ink-soft pb-[10px] font-semibold cursor-pointer hover:text-ink transition-colors"
             >
-              Coordenadoria {renderSortIcon("coordenadoria")}
+              Contrato {renderSortIcon("contrato")}
             </th>
             <th
               onClick={() => handleSort("responsavel")}
@@ -93,16 +86,16 @@ export function ActivityTable({ activities }: ActivityTableProps) {
               Responsável {renderSortIcon("responsavel")}
             </th>
             <th
-              onClick={() => handleSort("progresso")}
-              className="text-[10.5px] uppercase tracking-wider text-ink-soft pb-[10px] font-semibold min-w-[120px] cursor-pointer hover:text-ink transition-colors"
-            >
-              Progresso {renderSortIcon("progresso")}
-            </th>
-            <th
-              onClick={() => handleSort("prazo")}
+              onClick={() => handleSort("data_inicio")}
               className="text-[10.5px] uppercase tracking-wider text-ink-soft pb-[10px] font-semibold cursor-pointer hover:text-ink transition-colors"
             >
-              Prazo {renderSortIcon("prazo")}
+              Data de início {renderSortIcon("data_inicio")}
+            </th>
+            <th
+              onClick={() => handleSort("data_fim")}
+              className="text-[10.5px] uppercase tracking-wider text-ink-soft pb-[10px] font-semibold cursor-pointer hover:text-ink transition-colors"
+            >
+              Data final {renderSortIcon("data_fim")}
             </th>
             <th
               onClick={() => handleSort("status")}
@@ -120,21 +113,10 @@ export function ActivityTable({ activities }: ActivityTableProps) {
             >
               <td className="py-3 pr-2 font-medium">{d.atividade}</td>
               <td className="py-3 pr-2 font-mono-kpi text-ink-soft">{d.projeto || "—"}</td>
-              <td className="py-3 pr-2">{d.coordenadoria}</td>
+              <td className="py-3 pr-2">{d.contrato || "—"}</td>
               <td className="py-3 pr-2">{d.responsavel}</td>
-              <td className="py-3 pr-2">
-                <ProgressBar progress={d.progresso} />
-              </td>
-              <td className="py-3 pr-2 font-mono-kpi whitespace-nowrap">
-                {(() => {
-                  const startFmt = formatDateShort(d.data_inicio ?? null);
-                  const endFmt = formatDateShort(d.data_fim ?? null);
-                  if (startFmt === "—" && endFmt === "—") return "—";
-                  if (startFmt === "—") return endFmt;
-                  if (endFmt === "—") return `${startFmt} a —`;
-                  return `${startFmt} a ${endFmt}`;
-                })()}
-              </td>
+              <td className="py-3 pr-2 font-mono-kpi">{formatDateShort(d.data_inicio ?? null)}</td>
+              <td className="py-3 pr-2 font-mono-kpi">{formatDateShort(d.data_fim ?? null)}</td>
               <td className="py-3">
                 <StatusBadge status={d.status} />
               </td>

@@ -79,6 +79,7 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
     status: mapApiStatus(activity.status),
     data_inicio: activity.start_date,
     data_fim: prazoAtivo,
+    contrato: activity.contract ?? "—",
   };
 }
 

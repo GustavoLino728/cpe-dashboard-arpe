@@ -140,18 +140,6 @@ export default function DashboardHome() {
         progress={metrics.progress}
         total={metrics.total}
       />
-
-      {/* Tabela de Detalhamento Reutilizável */}
-      <div className="flex flex-col gap-3">
-        <h2 className="font-display font-semibold text-[13.5px] text-ink px-1 select-none">
-          Detalhamento das atividades
-        </h2>
-        {loading ? (
-          <div className="bg-panel border border-line/30 rounded-custom p-6 h-[200px] animate-pulse" />
-        ) : (
-          <ActivityTable activities={filteredData} />
-        )}
-      </div>
     </div>
   );
 }
