@@ -3,6 +3,7 @@ from datetime import date
 from sqlalchemy import select
 from app.database.session import async_session_maker
 from app.domain.activities.models import Activity
+from app.domain.projects.models import Project
 from app.domain.users.models import User
 from app.domain.notifications.services import create_notification
 from app.core.email import send_email
@@ -96,14 +97,14 @@ async def check_deadlines_job():
                     </body>
                 </html>
                 """
-                send_email(user.email, f"[SMPE] {title}", email_html)
+                send_email(user.email, f"[CPE - ARPE] {title}", email_html)
 
             for email in coordination_emails:
                 email_html_generic = f"""
                 <html>
                     <body style="font-family: sans-serif; color: #16283C; line-height: 1.5;">
                         <h2 style="color: #1B7F79;">{title}</h2>
-                        <p>Prezados,</p>
+                        <p>Prezados, a Coordenadoria de Projetos Estratégicos da ARPE informa que: </p>
                         <p>{content}</p>
                         <hr style="border: 0; border-top: 1px solid #D5DBE1; margin: 20px 0;"/>
                         <p style="font-size: 13px; color: #5C7185;">
@@ -119,7 +120,7 @@ async def check_deadlines_job():
                     </body>
                 </html>
                 """
-                send_email(email, f"[SMPE] {title}", email_html_generic)
+                send_email(email, f"[CPE - ARPE] {title}", email_html_generic)
 
 
 if __name__ == "__main__":

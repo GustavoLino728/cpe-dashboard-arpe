@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI):
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     import asyncio
     from app.domain.projects.services import sync_projects_from_google_sheets
+    from app.scripts.check_deadlines import check_deadlines_job
 
     try:
         async with engine.begin() as conn:
@@ -61,8 +62,20 @@ async def lifespan(app: FastAPI):
         id='google_sheets_sync_job',
         replace_existing=True
     )
+
+    # Adiciona o job para rodar diariamente às 8h
+    scheduler.add_job(
+        check_deadlines_job,
+        'cron',
+        hour=8,
+        minute=0,
+        id='check_deadlines_job',
+        replace_existing=True
+    )
+    
     scheduler.start()
     logger.info("⏰ Agendador de sincronização automática ativado (intervalo: 15 minutos)")
+    logger.info("⏰ Agendador de checagem de prazos ativado (diariamente às 08:00)")
     
     # Dispara uma primeira sincronização em background logo após o startup para atualizar os dados
     asyncio.create_task(sync_projects_from_google_sheets())

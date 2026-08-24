@@ -47,7 +47,7 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
 
 async def update_user(db: AsyncSession, user_id: uuid.UUID, data: UserUpdate) -> User:
     user = await get_user_by_id(db, user_id)
-    update_data = data.model_dump(exclude_none=True)
+    update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(user, field, value)
     await db.commit()

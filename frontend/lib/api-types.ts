@@ -111,6 +111,7 @@ export interface ApiUser {
   name: string;
   email: string;
   role: "servidor" | "coordenador" | "admin";
+  department?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -121,12 +122,14 @@ export interface ApiUserCreate {
   email: string;
   password: string;
   role: "servidor" | "coordenador" | "admin";
+  department?: string | null;
 }
 
 export interface ApiUserUpdate {
   name?: string;
   email?: string;
   role?: "servidor" | "coordenador" | "admin";
+  department?: string | null;
   is_active?: boolean;
   password?: string;
 }

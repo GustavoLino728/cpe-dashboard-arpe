@@ -11,6 +11,8 @@ import {
   ApiUserCreate,
   ApiUserUpdate,
   ApiError,
+  fetchCoordenadorias,
+  ApiCoordenadoria,
 } from "@/lib/api";
 import {
   Users,
@@ -43,7 +45,9 @@ export default function UsuariosPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"servidor" | "coordenador" | "admin">("servidor");
+  const [department, setDepartment] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [coordenadorias, setCoordenadorias] = useState<ApiCoordenadoria[]>([]);
 
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
@@ -74,11 +78,21 @@ export default function UsuariosPage() {
     }
   }, []);
 
+  const loadCoordenadorias = useCallback(async () => {
+    try {
+      const data = await fetchCoordenadorias();
+      setCoordenadorias(data);
+    } catch (err) {
+      console.error("[Usuarios] Erro ao carregar coordenadorias", err);
+    }
+  }, []);
+
   useEffect(() => {
     if (user?.role === "admin") {
       loadUsers();
+      loadCoordenadorias();
     }
-  }, [user, loadUsers]);
+  }, [user, loadUsers, loadCoordenadorias]);
 
   // Open modal for creating a new user
   const handleOpenCreate = () => {
@@ -88,6 +102,7 @@ export default function UsuariosPage() {
     setEmail("");
     setPassword("");
     setRole("servidor");
+    setDepartment("");
     setIsActive(true);
     setIsModalOpen(true);
   };
@@ -100,6 +115,7 @@ export default function UsuariosPage() {
     setEmail(targetUser.email);
     setPassword(""); // Keep password blank unless changing it
     setRole(targetUser.role);
+    setDepartment(targetUser.department || "");
     setIsActive(targetUser.is_active);
     setIsModalOpen(true);
   };
@@ -112,12 +128,12 @@ export default function UsuariosPage() {
 
     try {
       if (modalMode === "create") {
-        const payload: ApiUserCreate = { name, email, password, role };
+        const payload: ApiUserCreate = { name, email, password, role, department: department || null };
         await createUser(payload);
         setFeedback({ type: "success", message: "Usuário criado com sucesso!" });
       } else {
         if (!selectedUser) return;
-        const payload: ApiUserUpdate = { name, role, is_active: isActive };
+        const payload: ApiUserUpdate = { name, role, is_active: isActive, department: department || null };
         if (password) {
           payload.password = password;
         }
@@ -157,7 +173,8 @@ export default function UsuariosPage() {
     return (
       u.name.toLowerCase().includes(searchLower) ||
       u.email.toLowerCase().includes(searchLower) ||
-      u.role.toLowerCase().includes(searchLower)
+      u.role.toLowerCase().includes(searchLower) ||
+      (u.department || "").toLowerCase().includes(searchLower)
     );
   });
 
@@ -261,6 +278,7 @@ export default function UsuariosPage() {
                 <tr className="border-b border-line bg-panel-soft/50 text-ink-soft font-semibold select-none">
                   <th className="py-3 px-5 font-semibold">Nome</th>
                   <th className="py-3 px-5 font-semibold">E-mail</th>
+                  <th className="py-3 px-5 font-semibold">Coordenadoria</th>
                   <th className="py-3 px-5 font-semibold">Cargo / Papel</th>
                   <th className="py-3 px-5 font-semibold">Status</th>
                   <th className="py-3 px-5 text-right font-semibold">Ações</th>
@@ -288,6 +306,7 @@ export default function UsuariosPage() {
                         {u.name}
                       </td>
                       <td className="py-3.5 px-5 text-ink-soft">{u.email}</td>
+                      <td className="py-3.5 px-5 text-ink-soft">{u.department || "—"}</td>
                       <td className="py-3.5 px-5 select-none">
                         <span className={`inline-block text-[11px] font-semibold rounded-md px-2 py-0.5 uppercase tracking-wide ${roleColor}`}>
                           {roleLabel}
@@ -403,6 +422,25 @@ export default function UsuariosPage() {
                   <option value="servidor">Servidor (Acesso de leitura)</option>
                   <option value="coordenador">Coordenador (Acesso setorial)</option>
                   <option value="admin">Administrador (Controle total)</option>
+                </select>
+              </div>
+
+              {/* Coordenadoria / Setor */}
+              <div className="flex flex-col gap-1.5">
+                <label className="font-sans font-semibold text-[12.5px] text-ink">
+                  Coordenadoria / Setor
+                </label>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="font-sans text-[13px] py-2 px-3 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors w-full"
+                >
+                  <option value="">Nenhuma / Sem coordenadoria</option>
+                  {coordenadorias.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
