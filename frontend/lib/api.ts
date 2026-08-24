@@ -11,13 +11,16 @@ import {
   ApiUser,
   ApiUserCreate,
   ApiUserUpdate,
+  ApiCoordenadoria,
+  ApiCoordenadoriaCreate,
+  ApiCoordenadoriaUpdate,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
 export * from "./api-types";
 export * from "./api-utils";
 
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, refreshAccessToken } from "@/lib/auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
@@ -56,7 +59,57 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
         detail = body.detail ?? detail;
       } catch {}
 
-      if (res.status === 401) {
+      // Verificar se já tentamos reenviar essa requisição para evitar loops
+      let isRetry = false;
+      if (init?.headers) {
+        if (init.headers instanceof Headers) {
+          isRetry = init.headers.has("X-Retry-Auth");
+        } else if (Array.isArray(init.headers)) {
+          isRetry = init.headers.some(([key]) => key.toLowerCase() === "x-retry-auth");
+        } else {
+          isRetry = !!(init.headers as Record<string, string>)["X-Retry-Auth"];
+        }
+      }
+
+      if (res.status === 401 && !isRetry) {
+        try {
+          console.log(`[apiFetch] Token expirado ao acessar ${path}. Tentando renovar...`);
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            // Clona e atualiza os headers com o novo token
+            let headersObj: Record<string, string> = {};
+            if (init?.headers) {
+              if (init.headers instanceof Headers) {
+                init.headers.forEach((value, key) => {
+                  headersObj[key] = value;
+                });
+              } else if (Array.isArray(init.headers)) {
+                init.headers.forEach(([key, value]) => {
+                  headersObj[key] = value;
+                });
+              } else {
+                headersObj = { ...init.headers } as Record<string, string>;
+              }
+            }
+            
+            headersObj["Authorization"] = `Bearer ${newToken}`;
+            headersObj["X-Retry-Auth"] = "true";
+
+            return await apiFetch<T>(path, {
+              ...init,
+              headers: headersObj,
+            });
+          }
+        } catch (refreshErr) {
+          console.error("[apiFetch] Erro ao tentar renovar o token:", refreshErr);
+        }
+
+        // Se falhou ao renovar
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("api-unauthorized"));
+        }
+      } else if (res.status === 401) {
+        // Se já era um retry e deu 401 de novo
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("api-unauthorized"));
         }
@@ -190,6 +243,37 @@ export async function updateUser(
 
 export async function deleteUser(userId: string): Promise<void> {
   await apiFetch<void>(`/api/v1/users/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchCoordenadorias(): Promise<ApiCoordenadoria[]> {
+  return apiFetch<ApiCoordenadoria[]>("/api/v1/coordenadorias");
+}
+
+export async function createCoordenadoria(
+  data: ApiCoordenadoriaCreate
+): Promise<ApiCoordenadoria> {
+  return apiFetch<ApiCoordenadoria>("/api/v1/coordenadorias", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCoordenadoria(
+  id: string,
+  data: ApiCoordenadoriaUpdate
+): Promise<ApiCoordenadoria> {
+  return apiFetch<ApiCoordenadoria>(`/api/v1/coordenadorias/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCoordenadoria(id: string): Promise<void> {
+  await apiFetch<void>(`/api/v1/coordenadorias/${id}`, {
     method: "DELETE",
   });
 }

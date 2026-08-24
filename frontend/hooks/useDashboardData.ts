@@ -17,7 +17,6 @@ export function useDashboardData() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedProject, setSelectedProject] = useState<string>("todos");
-  const [selectedMacro, setSelectedMacro] = useState<string>("todos");
 
   const [allProjects, setAllProjects] = useState<{ id: string; name: string }[]>([]);
 
@@ -60,7 +59,7 @@ export function useDashboardData() {
     return allProjects.map((p) => p.name).sort();
   }, [allProjects]);
 
-  const macroprocessos = ["Macroprocesso A", "Macroprocesso B", "Macroprocesso C"];
+
 
   const filteredData = useMemo(() => {
     let data = atividades;
@@ -74,12 +73,11 @@ export function useDashboardData() {
     }
 
     return data;
-  }, [scope, selectedCoord, selectedProject, selectedMacro, atividades]);
+  }, [scope, selectedCoord, selectedProject, atividades]);
 
   const resetFilters = useCallback(() => {
     setSelectedCoord("todas");
     setSelectedProject("todos");
-    setSelectedMacro("todos");
   }, [setSelectedCoord]);
 
   const total = filteredData.length;
@@ -159,10 +157,7 @@ export function useDashboardData() {
     setSelectedCoord,
     selectedProject,
     setSelectedProject,
-    selectedMacro,
-    setSelectedMacro,
     projetos,
-    macroprocessos,
     resetFilters,
     mounted,
     loading,

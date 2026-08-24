@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { ActivityTable } from "@/components/ActivityTable";
 import {
   fetchAtividades,
@@ -11,11 +12,20 @@ import {
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export default function AtividadesPage() {
+  const searchParams = useSearchParams();
+  const coordParam = searchParams.get("coordenadoria");
+
   const [search, setSearch] = useState("");
 
   const [selectedCoord, setSelectedCoord] = useState<string>("todas");
+
+  // Sync state with search parameter when it is present
+  useEffect(() => {
+    if (coordParam) {
+      setSelectedCoord(coordParam);
+    }
+  }, [coordParam]);
   const [selectedProject, setSelectedProject] = useState<string>("todos");
-  const [selectedMacro, setSelectedMacro] = useState<string>("todos");
 
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [allProjects, setAllProjects] = useState<{ id: string; name: string }[]>([]);
@@ -57,7 +67,7 @@ export default function AtividadesPage() {
     [allProjects]
   );
 
-  const macroprocessos = ["Macroprocesso A", "Macroprocesso B", "Macroprocesso C"];
+
 
   const filtered = useMemo(() => {
     let data = atividades;
@@ -82,13 +92,12 @@ export default function AtividadesPage() {
     }
 
     return data;
-  }, [search, atividades, selectedCoord, selectedProject, selectedMacro]);
+  }, [search, atividades, selectedCoord, selectedProject]);
 
   const resetFilters = () => {
     setSearch("");
     setSelectedCoord("todas");
     setSelectedProject("todos");
-    setSelectedMacro("todos");
   };
 
   if (error && !loading) {
@@ -165,25 +174,7 @@ export default function AtividadesPage() {
           </select>
         </div>
 
-        {/* Macroprocesso */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="macroSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-            Macroprocesso
-          </label>
-          <select
-            id="macroSelect"
-            value={selectedMacro}
-            onChange={(e) => setSelectedMacro(e.target.value)}
-            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
-          >
-            <option value="todos">Todos</option>
-            {macroprocessos.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
+
 
         {/* Redefinir Filtros */}
         <button

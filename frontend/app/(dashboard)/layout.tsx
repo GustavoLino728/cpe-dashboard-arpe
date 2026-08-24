@@ -35,7 +35,7 @@ export default function DashboardLayout({
   return (
     <Suspense fallback={null}>
       <DashboardProvider>
-        <div className="flex h-screen bg-bg text-ink max-lg:flex-col transition-colors duration-200 overflow-hidden">
+        <div className="flex h-screen bg-bg text-ink transition-colors duration-200 overflow-hidden">
           <Sidebar />
           <div className="flex flex-col flex-1 h-full min-w-0">
             <div className="shrink-0 pt-[22px] px-[30px] pb-[18px] max-lg:px-[20px] max-md:px-4">

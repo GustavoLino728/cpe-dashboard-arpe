@@ -3,9 +3,9 @@ import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login"];
 
-const IGNORED_PREFIXES = ["/_next", "/api", "/favicon.ico"];
+const IGNORED_PREFIXES = ["/_next", "/api", "/favicon.ico", "/logo-"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (IGNORED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
@@ -29,5 +29,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo-).*)"],
 };

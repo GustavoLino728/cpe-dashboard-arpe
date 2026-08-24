@@ -42,15 +42,34 @@ export function formatDateShort(iso: string | null): string {
   return `${parts[2]}/${parts[1]}`;
 }
 
+export function cleanCoordenadoriaName(name: string): string {
+  if (!name) return "";
+  const trimmed = name.trim();
+  const match = trimmed.match(/^ARPE\s*\(([^)]+)\)$/i);
+  if (match) {
+    return match[1].trim();
+  }
+  return trimmed;
+}
+
+export function isCombinedSector(name: string): boolean {
+  if (!name) return false;
+  const nameLower = name.toLowerCase();
+  return nameLower === "cpe e cojur" || nameLower.includes(" e ");
+}
+
 export function mapApiToAtividade(activity: ApiActivity): Atividade {
   const prazoAtivo = activity.new_date ?? activity.deadline;
 
+  const rawDept = activity.department && activity.department.length > 0
+    ? activity.department[0]
+    : "Sem Setor";
+  
+  const cleanedDept = cleanCoordenadoriaName(rawDept);
+
   return {
     atividade: activity.description,
-    coordenadoria:
-      activity.department && activity.department.length > 0
-        ? activity.department[0]
-        : "Sem Setor",
+    coordenadoria: cleanedDept,
     responsavel:
       activity.department && activity.department.length > 0
         ? activity.department.join(", ")
@@ -58,13 +77,15 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
     progresso: deriveProgress(activity.status),
     prazo: formatDateShort(prazoAtivo),
     status: mapApiStatus(activity.status),
+    data_inicio: activity.start_date,
+    data_fim: prazoAtivo,
   };
 }
 
 export function extractCoordenadorias(atividades: Atividade[]): string[] {
   const set = new Set<string>();
   for (const a of atividades) {
-    if (a.coordenadoria && a.coordenadoria !== "Sem Setor") {
+    if (a.coordenadoria && a.coordenadoria !== "Sem Setor" && !isCombinedSector(a.coordenadoria)) {
       set.add(a.coordenadoria);
     }
   }

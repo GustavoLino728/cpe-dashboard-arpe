@@ -12,6 +12,7 @@ from app.domain.dashboard.router import router as dashboard_router
 from app.domain.projects.router import router as projects_router
 from app.domain.users.router import router as users_router
 from app.domain.notifications.router import router as notifications_router
+from app.domain.coordenadorias.router import router as coordenadorias_router
 
 logging.basicConfig(
     level=logging.DEBUG if settings.app_debug else logging.INFO,
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI):
     from app.domain.projects.models import Project
     from app.domain.users.models import User
     from app.domain.notifications.models import Notification
+    from app.domain.coordenadorias.models import Coordenadoria
     
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     import asyncio
@@ -93,6 +95,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(users_router, prefix="/api/v1")
     app.include_router(notifications_router, prefix="/api/v1")
+    app.include_router(coordenadorias_router, prefix="/api/v1")
 
     @app.exception_handler(AppException)
     async def app_exception_handler(request: Request, exc: AppException):

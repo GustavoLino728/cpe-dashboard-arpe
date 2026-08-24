@@ -6,6 +6,7 @@ import {
   logout as authLogout,
   getStoredUser,
   isAuthenticated as checkAuth,
+  refreshAccessToken,
   type AuthUser,
   type LoginCredentials,
   type AuthError,
@@ -41,21 +42,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem("arpe-access-token");
       if (token) {
         const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
-        fetch(`${API_BASE}/api/v1/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => {
-            if (res.ok) return res.json();
+        
+        const fetchProfile = async (accessToken: string, isRetry = false) => {
+          try {
+            const res = await fetch(`${API_BASE}/api/v1/auth/me`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            
+            if (res.ok) {
+              const freshUser = await res.json();
+              console.log("[AuthContext] Usuário sincronizado com o banco de dados:", freshUser);
+              setUser(freshUser);
+              localStorage.setItem("arpe-user", JSON.stringify(freshUser));
+              return;
+            }
+            
+            if (res.status === 401 && !isRetry) {
+              console.log("[AuthContext] Token expirado ao buscar perfil. Tentando renovar...");
+              const newToken = await refreshAccessToken();
+              if (newToken) {
+                await fetchProfile(newToken, true);
+                return;
+              }
+            }
+            
             throw new Error("Não foi possível validar a sessão com o servidor.");
-          })
-          .then((freshUser: AuthUser) => {
-            console.log("[AuthContext] Usuário sincronizado com o banco de dados:", freshUser);
-            setUser(freshUser);
-            localStorage.setItem("arpe-user", JSON.stringify(freshUser));
-          })
-          .catch((err) => {
+          } catch (err) {
             console.warn("[AuthContext] Falha ao sincronizar perfil com o backend:", err);
-          });
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("api-unauthorized"));
+            }
+          }
+        };
+
+        fetchProfile(token);
       }
     }
     setIsLoading(false);

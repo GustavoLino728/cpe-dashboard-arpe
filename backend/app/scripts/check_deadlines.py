@@ -46,6 +46,16 @@ async def check_deadlines_job():
             if not notify:
                 continue
 
+            coordination_emails = []
+            if activity.department:
+                from app.domain.coordenadorias.models import Coordenadoria
+                coordinations_query = select(Coordenadoria).where(Coordenadoria.name.in_(activity.department))
+                result_coords = await db.execute(coordinations_query)
+                coordinations = result_coords.scalars().all()
+                for coord in coordinations:
+                    if coord.emails:
+                        coordination_emails.extend(coord.emails)
+
             users_query = select(User).where(User.is_active == True)
             if activity.department:
                 users_query = users_query.where(User.department.in_(activity.department))
@@ -53,7 +63,7 @@ async def check_deadlines_job():
             result_users = await db.execute(users_query)
             users_to_notify = result_users.scalars().all()
 
-            if not users_to_notify:
+            if not users_to_notify and not coordination_emails:
                 continue
 
             for user in users_to_notify:
@@ -87,6 +97,29 @@ async def check_deadlines_job():
                 </html>
                 """
                 send_email(user.email, f"[SMPE] {title}", email_html)
+
+            for email in coordination_emails:
+                email_html_generic = f"""
+                <html>
+                    <body style="font-family: sans-serif; color: #16283C; line-height: 1.5;">
+                        <h2 style="color: #1B7F79;">{title}</h2>
+                        <p>Prezados,</p>
+                        <p>{content}</p>
+                        <hr style="border: 0; border-top: 1px solid #D5DBE1; margin: 20px 0;"/>
+                        <p style="font-size: 13px; color: #5C7185;">
+                            <strong>Atividade:</strong> {activity.description}<br/>
+                            <strong>SEI:</strong> {activity.sei_number or '—'}<br/>
+                            <strong>Status Atual:</strong> {activity.status}<br/>
+                            <strong>Prazo Final:</strong> {activity.deadline.strftime('%d/%m/%Y')}<br/>
+                            <strong>Setor(es) Responsável(eis):</strong> {', '.join(activity.department) if activity.department else '—'}
+                        </p>
+                        <p style="font-size: 13px; color: #5C7185; margin-top: 20px;">
+                            Acesse o sistema para verificar o detalhamento completo.
+                        </p>
+                    </body>
+                </html>
+                """
+                send_email(email, f"[SMPE] {title}", email_html_generic)
 
 
 if __name__ == "__main__":

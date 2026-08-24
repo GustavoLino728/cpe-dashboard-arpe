@@ -15,10 +15,7 @@ export default function DashboardHome() {
     setSelectedCoord,
     selectedProject,
     setSelectedProject,
-    selectedMacro,
-    setSelectedMacro,
     projetos,
-    macroprocessos,
     resetFilters,
     mounted,
     loading,
@@ -95,25 +92,7 @@ export default function DashboardHome() {
           </select>
         </div>
 
-        {/* Filtro por Macroprocessos (não implementado) */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="macroSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-            Macroprocesso
-          </label>
-          <select
-            id="macroSelect"
-            value={selectedMacro}
-            onChange={(e) => setSelectedMacro(e.target.value)}
-            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
-          >
-            <option value="todos">Todos</option>
-            {macroprocessos.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
+
 
         {/* Botão Redefinir Filtros */}
         <button
