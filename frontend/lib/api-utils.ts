@@ -77,6 +77,8 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
     progresso: deriveProgress(activity.status),
     prazo: formatDateShort(prazoAtivo),
     status: mapApiStatus(activity.status),
+    data_inicio: activity.start_date,
+    data_fim: prazoAtivo,
   };
 }
 

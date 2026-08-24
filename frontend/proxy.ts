@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ["/login"];
 
 const IGNORED_PREFIXES = ["/_next", "/api", "/favicon.ico", "/logo-"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (IGNORED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {

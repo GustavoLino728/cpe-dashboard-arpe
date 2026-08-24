@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Atividade } from "@/lib/api";
+import { Atividade, formatDateShort } from "@/lib/api";
 import { StatusBadge } from "./StatusBadge";
 import { ProgressBar } from "./ProgressBar";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -24,12 +24,6 @@ export function ActivityTable({ activities }: ActivityTableProps) {
     }
   };
 
-  const parsePrazo = (prazo: string) => {
-    const parts = prazo.split("/");
-    if (parts.length < 2) return 0;
-    return parseInt(parts[1]) * 100 + parseInt(parts[0]);
-  };
-
   const sortedActivities = useMemo(() => {
     if (!sortField) return activities;
 
@@ -39,8 +33,9 @@ export function ActivityTable({ activities }: ActivityTableProps) {
       let valB: any = b[sortField as keyof Atividade] ?? "";
 
       if (sortField === "prazo") {
-        valA = parsePrazo(a.prazo);
-        valB = parsePrazo(b.prazo);
+        // Sort chronologically using ISO end date (data_fim) falling back to start date (data_inicio)
+        valA = a.data_fim ?? a.data_inicio ?? "";
+        valB = b.data_fim ?? b.data_inicio ?? "";
       }
 
       if (typeof valA === "string" && typeof valB === "string") {
@@ -130,7 +125,16 @@ export function ActivityTable({ activities }: ActivityTableProps) {
               <td className="py-3 pr-2">
                 <ProgressBar progress={d.progresso} />
               </td>
-              <td className="py-3 pr-2 font-mono-kpi">{d.prazo}</td>
+              <td className="py-3 pr-2 font-mono-kpi whitespace-nowrap">
+                {(() => {
+                  const startFmt = formatDateShort(d.data_inicio ?? null);
+                  const endFmt = formatDateShort(d.data_fim ?? null);
+                  if (startFmt === "—" && endFmt === "—") return "—";
+                  if (startFmt === "—") return endFmt;
+                  if (endFmt === "—") return `${startFmt} a —`;
+                  return `${startFmt} a ${endFmt}`;
+                })()}
+              </td>
               <td className="py-3">
                 <StatusBadge status={d.status} />
               </td>

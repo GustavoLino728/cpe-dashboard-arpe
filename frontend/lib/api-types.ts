@@ -91,6 +91,8 @@ export interface Atividade {
   prazo: string;
   status: StatusType;
   projeto?: string;
+  data_inicio?: string | null;
+  data_fim?: string | null;
 }
 
 export interface StatusDetail {
