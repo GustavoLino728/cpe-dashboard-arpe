@@ -1,41 +1,43 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from app.database.session import get_db
 from app.domain.projects.schemas import ProjectSchema, ProjectSimpleOut
 from app.domain.projects.models import Project
-from app.domain.projects.services import save_extracted_data
-from app.domain.projects.excel_parser import parse_excel_projects
+from app.domain.projects.services import sync_projects_from_google_sheets
 from uuid import UUID
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
-@router.post("/upload", response_model=list[ProjectSchema], status_code=status.HTTP_201_CREATED)
-async def upload_projects_excel(
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db)
-):
+@router.post("/sync", response_model=list[ProjectSchema], status_code=status.HTTP_200_OK)
+async def sync_google_sheets():
     """
-    Recebe uma planilha Excel (.xlsx ou .xls), varre todas as abas (worksheets),
-    cria/atualiza um projeto para cada aba e salva suas respectivas atividades no banco de dados.
-    Retorna a lista de todos os projetos criados/atualizados com suas atividades.
+    Sincroniza os projetos utilizando a API oficial do Google Sheets via Conta de Serviço (Service Account).
+    A URL da planilha é obtida a partir da variável de ambiente GOOGLE_SHEET_URL do backend.
     """
-    if not file.filename.endswith((".xlsx", ".xls")):
+    try:
+        saved_projects = await sync_projects_from_google_sheets()
+        return saved_projects
+    except ValueError as ve:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Apenas arquivos Excel (.xlsx ou .xls) são suportados."
+            detail=str(ve)
         )
-        
-    parsed_projects = parse_excel_projects(file)
-    if not parsed_projects:
+    except FileNotFoundError as fnfe:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(fnfe)
+        )
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nenhum dado de projeto ou atividade pôde ser extraído da planilha. Verifique as colunas das abas."
+            detail=(
+                f"Erro ao sincronizar com Google Sheets: {str(e)}. "
+                "Verifique as variáveis de ambiente (incluindo GOOGLE_CREDENTIALS) e o arquivo credentials.json."
+            )
         )
-        
-    saved_projects = await save_extracted_data(db, parsed_projects)
-    return saved_projects
+
 
 @router.get("", response_model=list[ProjectSchema])
 async def list_projects(db: AsyncSession = Depends(get_db)):
@@ -57,6 +59,7 @@ async def list_projects_simple(db: AsyncSession = Depends(get_db)):
         select(Project).order_by(Project.name.asc())
     )
     return result.scalars().all()
+
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(project_id: UUID, db: AsyncSession = Depends(get_db)):

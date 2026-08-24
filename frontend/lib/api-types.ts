@@ -91,6 +91,8 @@ export interface Atividade {
   prazo: string;
   status: StatusType;
   projeto?: string;
+  data_inicio?: string | null;
+  data_fim?: string | null;
 }
 
 export interface StatusDetail {
@@ -122,6 +124,24 @@ export interface ApiUserUpdate {
   role?: "servidor" | "coordenador" | "admin";
   is_active?: boolean;
   password?: string;
+}
+
+export interface ApiCoordenadoria {
+  id: string;
+  name: string;
+  emails: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiCoordenadoriaCreate {
+  name: string;
+  emails: string[];
+}
+
+export interface ApiCoordenadoriaUpdate {
+  name?: string;
+  emails?: string[];
 }
 
 export interface ApiNotification {

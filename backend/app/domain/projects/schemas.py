@@ -16,6 +16,15 @@ class ActivitySchema(BaseModel):
     new_date: date | None = None
     status: str
     observations: str | None = None
+    
+    group_item: str | None = None
+    contract: str | None = None
+    step_number: str | None = None
+    actual_start_date: date | None = None
+    delay_justification_problem: str | None = None
+    delay_justification_action: str | None = None
+    delay_justification_responsible: str | None = None
+
     created_at: datetime
     updated_at: datetime
 
@@ -38,3 +47,7 @@ class ProjectSimpleOut(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class GoogleSheetsSyncSchema(BaseModel):
+    url: str

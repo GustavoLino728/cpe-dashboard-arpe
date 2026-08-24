@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
     app_debug: bool = False
+    google_sheet_url: str | None = None
+    google_credentials: str | None = None
 
     # Database
     database_url: str

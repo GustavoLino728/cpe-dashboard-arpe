@@ -11,7 +11,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
 export interface AuthTokens {
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string;
   token_type: string;
 }
 
@@ -67,7 +67,9 @@ export function getStoredUser(): AuthUser | null {
 function saveTokens(tokens: AuthTokens): void {
   try {
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+    if (tokens.refresh_token) {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+    }
     
     // Salvar em cookie para o Next.js middleware (server-side)
     if (typeof window !== "undefined") {
