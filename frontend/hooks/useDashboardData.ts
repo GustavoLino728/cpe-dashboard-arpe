@@ -126,7 +126,7 @@ export function useDashboardData() {
       nota = "visão pessoal · ";
     } else {
       nota =
-        (selectedCoord === "todas" ? "todas as coordenadorias" : selectedCoord) +
+        (selectedCoord === "todas" ? "todos os responsáveis" : selectedCoord) +
         " · ";
     }
     return nota + "dados carregados da API";

@@ -51,7 +51,7 @@ export default function DashboardHome() {
         {scope === "coordenadoria" && (
           <div className="flex flex-col gap-1.5">
             <label htmlFor="coordSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-              Coordenadoria
+              Responsável
             </label>
             <select
               id="coordSelect"

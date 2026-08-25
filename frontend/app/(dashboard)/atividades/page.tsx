@@ -144,17 +144,17 @@ export default function AtividadesPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar atividade, setor, projeto ou coordenadoria..."
+          placeholder="Buscar atividade, responsável, projeto ou setor..."
           className="flex-1 font-sans text-[13.5px] py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none focus:border-teal transition-colors"
         />
       </div>
 
       {/* Filtros Dropdowns */}
       <div className="flex items-end gap-4 flex-wrap">
-        {/* Coordenadoria */}
+        {/* Responsável */}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="coordSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-            Coordenadoria
+            Responsável
           </label>
           <select
             id="coordSelect"
