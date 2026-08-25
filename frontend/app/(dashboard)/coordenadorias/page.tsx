@@ -156,7 +156,6 @@ export default function CoordenadoriasPage() {
       } else if (drawerMode === "edit" && selectedCoord) {
         if (selectedCoord.id) {
           await updateCoordenadoria(selectedCoord.id, {
-            name: formName.trim(),
             emails: cleanEmails,
           });
         } else {

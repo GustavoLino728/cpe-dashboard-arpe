@@ -26,7 +26,18 @@ async def logging_middleware(request: Request, call_next):
     ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else None)
     set_current_ip(ip)
 
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration = (time.perf_counter() - start) * 1000
+        logger.exception(
+            "[%s] %s %s failed after %.1fms",
+            request_id,
+            request.method,
+            request.url.path,
+            duration,
+        )
+        raise
 
     duration = (time.perf_counter() - start) * 1000
     logger.info(
