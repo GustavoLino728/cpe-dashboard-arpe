@@ -81,7 +81,7 @@ async def check_deadlines_job():
                 <html>
                     <body style="font-family: sans-serif; color: #16283C; line-height: 1.5;">
                         <h2 style="color: #1B7F79;">{title}</h2>
-                        <p>Prezado(a), <strong>{user.name}</strong>. A Coordenadoria de Projetos Estratégicos da ARPE informa que: </p>
+                        <p>Prezado(a), <strong>{user.name}</strong>. A equipe de Projetos Estratégicos da ARPE informa que: </p>
                         <p>{content}</p>
                         <hr style="border: 0; border-top: 1px solid #D5DBE1; margin: 20px 0;"/>
                         <p style="font-size: 13px; color: #5C7185;">
@@ -104,7 +104,7 @@ async def check_deadlines_job():
                 <html>
                     <body style="font-family: sans-serif; color: #16283C; line-height: 1.5;">
                         <h2 style="color: #1B7F79;">{title}</h2>
-                        <p>Prezados, a Coordenadoria de Projetos Estratégicos da ARPE informa que: </p>
+                        <p>Prezados, a equipe de Projetos Estratégicos da ARPE informa que: </p>
                         <p>{content}</p>
                         <hr style="border: 0; border-top: 1px solid #D5DBE1; margin: 20px 0;"/>
                         <p style="font-size: 13px; color: #5C7185;">

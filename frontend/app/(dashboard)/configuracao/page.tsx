@@ -30,7 +30,7 @@ export default function ConfiguracaoPage() {
     alert(
       "Configurações Salvas (Simulação)!\n\n" +
       "Valores:\n" +
-      `- Coordenadoria Padrão: ${defaultCoord === "todas" ? "Todas" : defaultCoord}\n` +
+      `- Responsável Padrão: ${defaultCoord === "todas" ? "Todos" : defaultCoord}\n` +
       `- Frequência: ${frequency}\n` +
       `- Notificar atrasos: ${notifyLate ? "Sim" : "Não"}\n\n` +
       "TODO: Integrar persistência no banco de dados."
@@ -52,13 +52,13 @@ export default function ConfiguracaoPage() {
         onSubmit={handleSave}
         className="bg-panel border border-line/30 rounded-custom p-6 transition-all duration-200 flex flex-col gap-6"
       >
-        {/* Campo 1: Coordenadoria Padrão */}
+        {/* Campo 1: Responsável Padrão */}
         <div className="flex flex-col gap-2">
           <label className="font-sans font-semibold text-[13px] text-ink flex items-center gap-1.5 select-none">
-            Coordenadoria padrão ao abrir
+            Responsável padrão ao abrir
             <span
               className="text-ink-soft hover:text-ink cursor-help"
-              title="Define qual visão de coordenadoria será exibida inicialmente quando o painel principal for carregado."
+              title="Define qual visão de responsável será exibida inicialmente quando o painel principal for carregado."
             >
               <HelpCircle className="w-3.5 h-3.5" />
             </span>
@@ -68,7 +68,7 @@ export default function ConfiguracaoPage() {
             onChange={(e) => setDefaultCoord(e.target.value)}
             className="font-sans text-[13.5px] py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors w-full"
           >
-            <option value="todas">Central — todas as coordenadorias</option>
+            <option value="todas">Central — todos os responsáveis</option>
             {coordenadorias.map((c) => (
               <option key={c} value={c}>
                 {c}

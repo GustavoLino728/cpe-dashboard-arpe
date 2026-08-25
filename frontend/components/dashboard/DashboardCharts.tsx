@@ -50,7 +50,7 @@ export function DashboardCharts({
           <>
             <DonutChart
               data={donutCoordData}
-              title="Atividades por coordenadoria"
+              title="Atividades por responsável"
             />
             <DonutChart
               data={donutStatusData}

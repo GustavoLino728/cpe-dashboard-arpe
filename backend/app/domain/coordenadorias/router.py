@@ -4,7 +4,7 @@ from app.dependencies import CurrentUser, DBSession
 from app.domain.coordenadorias.schemas import CoordenadoriaOut, CoordenadoriaCreate, CoordenadoriaUpdate
 from app.domain.coordenadorias import services
 
-router = APIRouter(prefix="/coordenadorias", tags=["Coordenadorias"])
+router = APIRouter(prefix="/coordenadorias", tags=["Responsáveis"])
 
 @router.get("", response_model=list[CoordenadoriaOut])
 async def list_coords(
@@ -23,7 +23,7 @@ async def create_coord(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Coordenadoria com este nome já existe.",
+            detail="Responsável com este nome já existe.",
         )
     return await services.create_coordenadoria(db, data)
 
@@ -38,7 +38,7 @@ async def update_coord(
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Coordenadoria não encontrada.",
+            detail="Responsável não encontrado.",
         )
     return updated
 
@@ -52,5 +52,5 @@ async def delete_coord(
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Coordenadoria não encontrada.",
+            detail="Responsável não encontrado.",
         )

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
@@ -51,7 +51,7 @@ export default function CoordenadoriasPage() {
       setCoordenadoriasDb(dbData);
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "Erro ao carregar coordenadorias";
+        err instanceof Error ? err.message : "Erro ao carregar responsÃ¡veis";
       setError(msg);
       setAtividades([]);
       setCoordenadoriasDb([]);
@@ -170,7 +170,7 @@ export default function CoordenadoriasPage() {
       setIsDrawerOpen(false);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar coordenadoria");
+      setError(err instanceof Error ? err.message : "Erro ao salvar responsÃ¡vel");
     } finally {
       setIsSaving(false);
     }
@@ -178,7 +178,7 @@ export default function CoordenadoriasPage() {
 
   const handleDelete = async () => {
     if (!selectedCoord || !selectedCoord.id) return;
-    if (!confirm("Tem certeza que deseja excluir esta coordenadoria?")) return;
+    if (!confirm("Tem certeza que deseja excluir este responsÃ¡vel?")) return;
 
     setIsSaving(true);
     try {
@@ -186,7 +186,7 @@ export default function CoordenadoriasPage() {
       setIsDrawerOpen(false);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir coordenadoria");
+      setError(err instanceof Error ? err.message : "Erro ao excluir responsÃ¡vel");
     } finally {
       setIsSaving(false);
     }
@@ -197,7 +197,7 @@ export default function CoordenadoriasPage() {
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <AlertTriangle className="w-10 h-10 text-rose-500" />
         <p className="text-[14px] text-ink-soft text-center max-w-md">
-          Não foi possível carregar as coordenadorias.
+          Não foi possível carregar os responsáveis.
           <br />
           <span className="text-[12px] text-ink-soft/70">{error}</span>
         </p>
@@ -217,17 +217,17 @@ export default function CoordenadoriasPage() {
       <div className="flex justify-between items-center select-none">
         <div>
           <h2 className="font-display font-bold text-[18px] text-ink">
-            Configuração de Setores e Alertas
+            Configuração de Responsáveis e Alertas
           </h2>
           <p className="text-[12px] text-ink-soft mt-0.5">
-            Cadastre os e-mails de alerta oficiais de cada coordenadoria para notificações automáticas de prazos.
+            Cadastre os e-mails de alerta oficiais de cada responsável para notificações automáticas de prazos.
           </p>
         </div>
         <button
           onClick={handleOpenCreate}
           className="flex items-center gap-2 font-sans text-[12.5px] font-semibold text-white bg-teal rounded-lg py-2 px-4 cursor-pointer hover:bg-teal/90 active:scale-[0.98] transition-all duration-150 shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Nova Coordenadoria
+          <Plus className="w-4 h-4" /> Novo Responsável
         </button>
       </div>
 
@@ -252,10 +252,10 @@ export default function CoordenadoriasPage() {
       ) : coordData.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20">
           <p className="text-[14px] text-ink-soft text-center">
-            Nenhuma coordenadoria encontrada.
+            Nenhum responsável encontrado.
           </p>
           <p className="text-[12px] text-ink-soft/70 text-center">
-            Importe uma planilha ou cadastre uma manualmente para começar a ver os dados.
+            Importe uma planilha ou cadastre um responsável manualmente para começar a ver os dados.
           </p>
         </div>
       ) : (
@@ -276,7 +276,7 @@ export default function CoordenadoriasPage() {
                   <button
                     onClick={() => handleOpenEdit({ id: data.id, name: data.name, emails: data.emails })}
                     className="text-ink-soft hover:text-teal cursor-pointer p-1 rounded hover:bg-line/30 transition-colors"
-                    title="Editar Coordenadoria e E-mails"
+                    title="Editar responsável e e-mails"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
@@ -356,7 +356,7 @@ export default function CoordenadoriasPage() {
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b border-line">
               <h3 className="font-display font-bold text-[16px] text-ink">
-                {drawerMode === "create" ? "Nova Coordenadoria" : "Editar Coordenadoria"}
+                {drawerMode === "create" ? "Novo Responsável" : "Editar Responsável"}
               </h3>
               <button
                 onClick={() => setIsDrawerOpen(false)}
@@ -379,7 +379,7 @@ export default function CoordenadoriasPage() {
                 {/* Nome */}
                 <div className="flex flex-col gap-1.5">
                   <label className="font-sans font-semibold text-[12.5px] text-ink">
-                    Nome da Coordenadoria / Setor
+                    Nome do Responsável / Setor
                   </label>
                   <input
                     type="text"
@@ -418,7 +418,7 @@ export default function CoordenadoriasPage() {
                             required
                             value={email}
                             onChange={(e) => handleEmailInputChange(index, e.target.value)}
-                            placeholder="Ex: coordenadoria@arpe.pe.gov.br"
+                            placeholder="Ex: responsavel@arpe.pe.gov.br"
                             className="font-sans text-[13px] py-2 pl-9 pr-3 rounded-lg border border-line bg-panel text-ink outline-none focus:border-teal transition-colors w-full"
                           />
                         </div>
@@ -480,3 +480,4 @@ export default function CoordenadoriasPage() {
     </div>
   );
 }
+

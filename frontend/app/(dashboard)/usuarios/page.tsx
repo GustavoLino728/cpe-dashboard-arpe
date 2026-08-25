@@ -83,7 +83,7 @@ export default function UsuariosPage() {
       const data = await fetchCoordenadorias();
       setCoordenadorias(data);
     } catch (err) {
-      console.error("[Usuarios] Erro ao carregar coordenadorias", err);
+      console.error("[Usuarios] Erro ao carregar responsáveis", err);
     }
   }, []);
 
@@ -278,7 +278,7 @@ export default function UsuariosPage() {
                 <tr className="border-b border-line bg-panel-soft/50 text-ink-soft font-semibold select-none">
                   <th className="py-3 px-5 font-semibold">Nome</th>
                   <th className="py-3 px-5 font-semibold">E-mail</th>
-                  <th className="py-3 px-5 font-semibold">Coordenadoria</th>
+                  <th className="py-3 px-5 font-semibold">Responsável</th>
                   <th className="py-3 px-5 font-semibold">Cargo / Papel</th>
                   <th className="py-3 px-5 font-semibold">Status</th>
                   <th className="py-3 px-5 text-right font-semibold">Ações</th>
@@ -425,17 +425,17 @@ export default function UsuariosPage() {
                 </select>
               </div>
 
-              {/* Coordenadoria / Setor */}
+              {/* Responsável / Setor */}
               <div className="flex flex-col gap-1.5">
                 <label className="font-sans font-semibold text-[12.5px] text-ink">
-                  Coordenadoria / Setor
+                  Responsável / Setor
                 </label>
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
                   className="font-sans text-[13px] py-2 px-3 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors w-full"
                 >
-                  <option value="">Nenhuma / Sem coordenadoria</option>
+                  <option value="">Nenhum / Sem responsável</option>
                   {coordenadorias.map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}

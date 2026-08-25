@@ -64,7 +64,7 @@ export function Topbar() {
     : pathname === "/atividades"
       ? "Atividades"
       : pathname === "/coordenadorias"
-        ? "Coordenadorias"
+        ? "Responsáveis"
         : pathname === "/planilhas"
           ? "Planilhas"
           : pathname === "/contratos"

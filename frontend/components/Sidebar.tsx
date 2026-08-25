@@ -15,7 +15,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: "Visão geral", href: "/", icon: "⌂" },
   { name: "Atividades", href: "/atividades", icon: "▤" },
-  { name: "Coordenadorias", href: "/coordenadorias", icon: "◔" },
+  { name: "Responsáveis", href: "/coordenadorias", icon: "◔" },
   { name: "Planilhas", href: "/planilhas", icon: "☰" },
   { name: "Usuários", href: "/usuarios", icon: "♟" },
   { name: "Contratos", href: "/contratos", icon: "§" },
