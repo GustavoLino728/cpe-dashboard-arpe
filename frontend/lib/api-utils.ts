@@ -19,13 +19,20 @@ export const statusMap: Record<StatusType, StatusDetail> = {
       "text-rose-700 bg-rose-50 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30",
     corHex: "#EF4444",
   },
+  pending: {
+    label: "Não Iniciado",
+    corTailwind:
+      "text-slate-600 bg-slate-100 dark:bg-slate-800/40 dark:text-slate-400 border border-slate-200 dark:border-slate-700/40",
+    corHex: "#6B7280",
+  },
 };
 
 export function mapApiStatus(apiStatus: string): StatusType {
   const s = apiStatus.toLowerCase();
   if (s.includes("conclu")) return "ok";
   if (s.includes("andamento")) return "warn";
-  return "late";
+  if (s.includes("iniciado") || s.includes("n\u00e3o iniciado")) return "pending";
+  return "pending"; // fallback seguro: desconhecido = não iniciado
 }
 
 export function deriveProgress(apiStatus: string): number {
@@ -67,6 +74,18 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
   
   const cleanedDept = cleanCoordenadoriaName(rawDept);
 
+  // Calcular status real: considera atraso baseado na data, não apenas no texto do status
+  let computedStatus = mapApiStatus(activity.status);
+  if (computedStatus !== "ok" && prazoAtivo) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadline = new Date(prazoAtivo);
+    deadline.setHours(0, 0, 0, 0);
+    if (deadline < today) {
+      computedStatus = "late"; // Atrasado independente do status (exceto Concluído)
+    }
+  }
+
   return {
     atividade: activity.description,
     coordenadoria: cleanedDept,
@@ -76,7 +95,7 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
         : "—",
     progresso: deriveProgress(activity.status),
     prazo: formatDateShort(prazoAtivo),
-    status: mapApiStatus(activity.status),
+    status: computedStatus,
     data_inicio: activity.start_date,
     data_fim: prazoAtivo,
     contrato: activity.contract ?? "—",

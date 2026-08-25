@@ -156,7 +156,9 @@ export async function fetchPaginatedAtividades(
   limit = 15,
   search = "",
   coordenadoria = "",
-  project = ""
+  project = "",
+  status = "",
+  prazo = ""
 ): Promise<PaginatedAtividades> {
   const params = new URLSearchParams();
   params.append("page", page.toString());
@@ -164,6 +166,8 @@ export async function fetchPaginatedAtividades(
   if (search) params.append("search", search);
   if (coordenadoria && coordenadoria !== "todas") params.append("coordenadoria", coordenadoria);
   if (project && project !== "todos") params.append("project", project);
+  if (status && status !== "todos") params.append("status_filter", status);
+  if (prazo && prazo !== "todos") params.append("prazo", prazo);
 
   const res = await apiFetch<{
     total: number;

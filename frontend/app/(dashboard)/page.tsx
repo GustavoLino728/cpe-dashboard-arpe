@@ -4,8 +4,6 @@ import React from "react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { DashboardKPIs } from "@/components/dashboard/DashboardKPIs";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
-import { DashboardSummaryChips } from "@/components/dashboard/DashboardSummaryChips";
-import { ActivityTable } from "@/components/ActivityTable";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export default function DashboardHome() {
@@ -22,7 +20,6 @@ export default function DashboardHome() {
     error,
     atividades,
     coordenadorias,
-    filteredData,
     loadData,
     metrics,
     charts,
@@ -113,12 +110,16 @@ export default function DashboardHome() {
       <DashboardKPIs
         loading={loading}
         total={metrics.total}
+        notStarted={metrics.notStarted}
         progress={metrics.progress}
-        late={metrics.late}
         donePercent={metrics.donePercent}
-        activeCoordinations={metrics.activeCoordinations}
-        activeResponsibles={metrics.activeResponsibles}
-        projectsCount={coordenadorias.length}
+        deadlines7={metrics.deadlines7}
+        deadlines15={metrics.deadlines15}
+        deadlines30={metrics.deadlines30}
+        late={metrics.late}
+        selectedCoord={selectedCoord}
+        selectedProject={selectedProject}
+        includeCoordFilter={scope === "coordenadoria"}
       />
 
       {/* Donuts e Bar Chart em Grid */}
@@ -132,14 +133,6 @@ export default function DashboardHome() {
         barChartData={charts.barChartData}
       />
 
-      {/* Faixa de Chips — estilo executivo */}
-      <DashboardSummaryChips
-        loading={loading}
-        done={metrics.done}
-        late={metrics.late}
-        progress={metrics.progress}
-        total={metrics.total}
-      />
     </div>
   );
 }

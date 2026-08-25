@@ -85,7 +85,7 @@ export interface ApiTimelineEvent {
   fase: string;
 }
 
-export type StatusType = "ok" | "warn" | "late";
+export type StatusType = "ok" | "warn" | "late" | "pending";
 
 export interface Atividade {
   atividade: string;

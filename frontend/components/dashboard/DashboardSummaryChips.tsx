@@ -5,7 +5,6 @@ interface DashboardSummaryChipsProps {
   done: number;
   late: number;
   progress: number;
-  total: number;
 }
 
 export function DashboardSummaryChips({
@@ -13,17 +12,15 @@ export function DashboardSummaryChips({
   done,
   late,
   progress,
-  total,
 }: DashboardSummaryChipsProps) {
   const chips = [
     { value: done, label: "Concluídas no mês", color: "#3E8E6D", icon: "✓" },
     { value: late, label: "Atrasadas críticas", color: "#C4432D", icon: "!" },
     { value: progress, label: "Em andamento", color: "#D99A4E", icon: "◷" },
-    { value: total, label: "Total no filtro", color: "#5B95C4", icon: "▤" },
   ];
 
   return (
-    <section className="grid grid-cols-4 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
+    <section className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1">
       {chips.map((chip, idx) => (
         <div
           key={idx}

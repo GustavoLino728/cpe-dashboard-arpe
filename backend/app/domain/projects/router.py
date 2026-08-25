@@ -7,6 +7,7 @@ from app.domain.projects.schemas import ProjectSchema, ProjectSimpleOut, Paginat
 from app.domain.projects.models import Project
 from app.domain.projects.services import sync_projects_from_google_sheets
 from uuid import UUID
+from datetime import date, timedelta
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -69,9 +70,11 @@ async def list_paginated_activities(
     search: str | None = None,
     coordenadoria: str | None = None,
     project: str | None = None,
+    status_filter: str | None = None,
+    prazo: int | None = None,
 ):
     import re
-    from sqlalchemy import cast, String, func
+    from sqlalchemy import and_, cast, func, not_, or_, String
     from app.domain.activities.models import Activity
     from app.domain.projects.schemas import PaginatedActivitiesOut, ActivityOutSchema
 
@@ -119,6 +122,44 @@ async def list_paginated_activities(
 
     if coordenadoria and coordenadoria != "todas":
         query = query.filter(cast(Activity.department, String).ilike(f"%{coordenadoria}%"))
+
+    effective_deadline = func.coalesce(Activity.new_date, Activity.deadline)
+    is_done = Activity.status.ilike("%conclu%")
+    is_late = and_(not_(is_done), effective_deadline.is_not(None), effective_deadline < date.today())
+
+    if status_filter and status_filter != "todos":
+        if status_filter == "ok":
+            query = query.filter(is_done)
+        elif status_filter == "warn":
+            query = query.filter(
+                and_(
+                    Activity.status.ilike("%andamento%"),
+                    not_(is_late),
+                )
+            )
+        elif status_filter == "pending":
+            query = query.filter(
+                and_(
+                    or_(
+                        Activity.status.ilike("%iniciado%"),
+                        Activity.status.ilike("%não iniciado%"),
+                    ),
+                    not_(is_late),
+                )
+            )
+        elif status_filter == "late":
+            query = query.filter(is_late)
+
+    if prazo:
+        prazo_final = date.today() + timedelta(days=prazo)
+        query = query.filter(
+            and_(
+                not_(is_done),
+                effective_deadline.is_not(None),
+                effective_deadline >= date.today(),
+                effective_deadline <= prazo_final,
+            )
+        )
 
     # Obter contagem total com filtros aplicados
     count_query = select(func.count()).select_from(query.subquery())

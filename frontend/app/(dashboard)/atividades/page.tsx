@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { ActivityTable } from "@/components/ActivityTable";
 import {
@@ -12,11 +12,16 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
 export default function AtividadesPage() {
   const searchParams = useSearchParams();
   const coordParam = searchParams.get("coordenadoria");
+  const projectParam = searchParams.get("project");
+  const statusParam = searchParams.get("status");
+  const prazoParam = searchParams.get("prazo");
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCoord, setSelectedCoord] = useState<string>("todas");
-  const [selectedProject, setSelectedProject] = useState<string>("todos");
+  const [selectedCoord, setSelectedCoord] = useState<string>(coordParam || "todas");
+  const [selectedProject, setSelectedProject] = useState<string>(projectParam || "todos");
+  const [selectedStatus, setSelectedStatus] = useState<string>(statusParam || "todos");
+  const [selectedPrazo, setSelectedPrazo] = useState<string>(prazoParam || "todos");
   
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -25,16 +30,18 @@ export default function AtividadesPage() {
   const [projetos, setProjetos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const latestRequestId = useRef(0);
   
   const limit = 15;
 
   // Sync state with search parameter when it is present
   useEffect(() => {
-    if (coordParam) {
-      setSelectedCoord(coordParam);
-      setPage(1);
-    }
-  }, [coordParam]);
+    setSelectedCoord(coordParam || "todas");
+    setSelectedProject(projectParam || "todos");
+    setSelectedStatus(statusParam || "todos");
+    setSelectedPrazo(prazoParam || "todos");
+    setPage(1);
+  }, [coordParam, projectParam, statusParam, prazoParam]);
 
   // Debounce search input
   useEffect(() => {
@@ -46,6 +53,8 @@ export default function AtividadesPage() {
   }, [search]);
 
   const loadData = useCallback(async () => {
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
     setLoading(true);
     setError(null);
     try {
@@ -54,21 +63,26 @@ export default function AtividadesPage() {
         limit,
         debouncedSearch,
         selectedCoord,
-        selectedProject
+        selectedProject,
+        selectedStatus,
+        selectedPrazo
       );
+      if (requestId !== latestRequestId.current) return;
       setAtividades(data.activities);
       setTotal(data.total);
       setCoordenadorias(data.coordenadorias);
       setProjetos(data.projetos);
     } catch (err) {
+      if (requestId !== latestRequestId.current) return;
       const msg =
         err instanceof Error ? err.message : "Erro ao carregar atividades";
       setError(msg);
       setAtividades([]);
     } finally {
+      if (requestId !== latestRequestId.current) return;
       setLoading(false);
     }
-  }, [page, debouncedSearch, selectedCoord, selectedProject]);
+  }, [page, debouncedSearch, selectedCoord, selectedProject, selectedStatus, selectedPrazo]);
 
   useEffect(() => {
     loadData();
@@ -84,10 +98,22 @@ export default function AtividadesPage() {
     setPage(1);
   };
 
+  const handleStatusChange = (val: string) => {
+    setSelectedStatus(val);
+    setPage(1);
+  };
+
+  const handlePrazoChange = (val: string) => {
+    setSelectedPrazo(val);
+    setPage(1);
+  };
+
   const resetFilters = () => {
     setSearch("");
     setSelectedCoord("todas");
     setSelectedProject("todos");
+    setSelectedStatus("todos");
+    setSelectedPrazo("todos");
     setPage(1);
   };
 
@@ -162,6 +188,43 @@ export default function AtividadesPage() {
                 {p}
               </option>
             ))}
+          </select>
+        </div>
+
+        {/* Status */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="statusSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
+            Status
+          </label>
+          <select
+            id="statusSelect"
+            value={selectedStatus}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
+          >
+            <option value="todos">Todos</option>
+            <option value="pending">Não iniciadas</option>
+            <option value="warn">Em andamento</option>
+            <option value="ok">Concluídas</option>
+            <option value="late">Atrasadas</option>
+          </select>
+        </div>
+
+        {/* Prazo */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="prazoSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
+            Prazo
+          </label>
+          <select
+            id="prazoSelect"
+            value={selectedPrazo}
+            onChange={(e) => handlePrazoChange(e.target.value)}
+            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
+          >
+            <option value="todos">Todos</option>
+            <option value="7">Próximos 7 dias</option>
+            <option value="15">Próximos 15 dias</option>
+            <option value="30">Próximos 30 dias</option>
           </select>
         </div>
 

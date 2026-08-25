@@ -1,85 +1,121 @@
 import React from "react";
+import Link from "next/link";
 import { KpiCard } from "@/components/KpiCard";
 import {
   ClipboardList,
   Clock,
   AlertTriangle,
   CheckCircle,
-  Layers,
-  Users,
-  Hourglass,
-  FileSpreadsheet,
+  Timer,
+  PauseCircle,
+  CalendarClock,
+  TriangleAlert,
 } from "lucide-react";
 
 interface DashboardKPIsProps {
   loading: boolean;
   total: number;
+  notStarted: number;
   progress: number;
-  late: number;
   donePercent: number;
-  activeCoordinations: number;
-  activeResponsibles: number;
-  projectsCount: number;
+  deadlines7: number;
+  deadlines15: number;
+  deadlines30: number;
+  late: number;
+  selectedCoord?: string;
+  selectedProject?: string;
+  includeCoordFilter?: boolean;
 }
 
 export function DashboardKPIs({
   loading,
   total,
+  notStarted,
   progress,
-  late,
   donePercent,
-  activeCoordinations,
-  activeResponsibles,
-  projectsCount,
+  deadlines7,
+  deadlines15,
+  deadlines30,
+  late,
+  selectedCoord = "todas",
+  selectedProject = "todos",
+  includeCoordFilter = false,
 }: DashboardKPIsProps) {
+  const buildActivitiesHref = (filters: Record<string, string>) => {
+    const params = new URLSearchParams();
+
+    if (includeCoordFilter && selectedCoord !== "todas") {
+      params.set("coordenadoria", selectedCoord);
+    }
+
+    if (selectedProject !== "todos") {
+      params.set("project", selectedProject);
+    }
+
+    Object.entries(filters).forEach(([key, value]) => {
+      params.set(key, value);
+    });
+
+    const query = params.toString();
+    return query ? `/atividades?${query}` : "/atividades";
+  };
+
   const kpis = [
     {
       value: total,
       label: "Atividades",
       icon: <ClipboardList className="w-5 h-5 shrink-0" />,
       accentColor: "#3E8E6D",
+      href: buildActivitiesHref({}),
+    },
+    {
+      value: notStarted,
+      label: "Não Iniciadas",
+      icon: <PauseCircle className="w-5 h-5 shrink-0" />,
+      accentColor: "#6B7280",
+      href: buildActivitiesHref({ status: "pending" }),
     },
     {
       value: progress,
       label: "Em andamento",
       icon: <Clock className="w-5 h-5 shrink-0" />,
       accentColor: "#5B95C4",
-    },
-    {
-      value: late,
-      label: "Atrasadas",
-      icon: <AlertTriangle className="w-5 h-5 shrink-0" />,
-      accentColor: "#C4432D",
+      href: buildActivitiesHref({ status: "warn" }),
     },
     {
       value: `${donePercent}%`,
       label: "Concluídas",
       icon: <CheckCircle className="w-5 h-5 shrink-0" />,
       accentColor: "#1B7F79",
+      href: buildActivitiesHref({ status: "ok" }),
     },
     {
-      value: activeCoordinations,
-      label: "Coordenadorias ativas",
-      icon: <Layers className="w-5 h-5 shrink-0" />,
-      accentColor: "#5B95C4",
+      value: deadlines7,
+      label: "Prazos críticos - 7 dias",
+      icon: <AlertTriangle className="w-5 h-5 shrink-0" />,
+      accentColor: "#C4432D",
+      href: buildActivitiesHref({ prazo: "7" }),
     },
     {
-      value: activeResponsibles,
-      label: "Setores envolvidos",
-      icon: <Users className="w-5 h-5 shrink-0" />,
-      accentColor: "#7B69B8",
+      value: deadlines15,
+      label: "Prazos críticos - 15 dias",
+      icon: <Timer className="w-5 h-5 shrink-0" />,
+      accentColor: "#D97706",
+      href: buildActivitiesHref({ prazo: "15" }),
     },
     {
-      value: "—",
-      label: "Prazo médio restante",
-      icon: <Hourglass className="w-5 h-5 shrink-0" />,
+      value: deadlines30,
+      label: "Prazos críticos - 30 dias",
+      icon: <CalendarClock className="w-5 h-5 shrink-0" />,
       accentColor: "#D99A4E",
+      href: buildActivitiesHref({ prazo: "30" }),
     },
     {
-      value: projectsCount || "—",
-      label: "Projetos importados",
-      icon: <FileSpreadsheet className="w-5 h-5 shrink-0" />,
-      accentColor: "#7C8FA1",
+      value: late,
+      label: "Atividades atrasadas",
+      icon: <TriangleAlert className="w-5 h-5 shrink-0" />,
+      accentColor: "#B91C1C",
+      href: buildActivitiesHref({ status: "late" }),
     },
   ];
 
@@ -104,13 +140,18 @@ export function DashboardKPIs({
   return (
     <section className="grid grid-cols-4 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
       {kpis.map((kpi, idx) => (
-        <KpiCard
+        <Link
           key={idx}
-          value={kpi.value}
-          label={kpi.label}
-          icon={kpi.icon}
-          accentColor={kpi.accentColor}
-        />
+          href={kpi.href}
+          className="block rounded-custom outline-none focus-visible:ring-2 focus-visible:ring-teal/40"
+        >
+          <KpiCard
+            value={kpi.value}
+            label={kpi.label}
+            icon={kpi.icon}
+            accentColor={kpi.accentColor}
+          />
+        </Link>
       ))}
     </section>
   );
