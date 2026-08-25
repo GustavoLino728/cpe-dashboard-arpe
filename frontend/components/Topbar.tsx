@@ -67,6 +67,8 @@ export function Topbar() {
         ? "Coordenadorias"
         : pathname === "/planilhas"
           ? "Planilhas"
+          : pathname === "/contratos"
+            ? "Contratos"
           : pathname === "/configuracao"
             ? "Configuração"
             : "Dashboard";

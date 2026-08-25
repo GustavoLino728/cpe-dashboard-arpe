@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import date, datetime
 from uuid import UUID
 
@@ -19,6 +19,7 @@ class ActivitySchema(BaseModel):
     
     group_item: str | None = None
     contract: str | None = None
+    contract_url: str | None = None
     step_number: str | None = None
     actual_start_date: date | None = None
     delay_justification_problem: str | None = None
@@ -70,6 +71,8 @@ class ActivityOutSchema(BaseModel):
     observations: str | None = None
     group_item: str | None = None
     contract: str | None = None
+    contract_url: str | None = None
+    contract_links: list[dict[str, str | None]] = Field(default_factory=list)
     step_number: str | None = None
     actual_start_date: date | None = None
     created_at: datetime

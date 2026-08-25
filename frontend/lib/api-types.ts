@@ -12,6 +12,8 @@ export interface ApiActivity {
   observations: string | null;
   group_item: string | null;
   contract: string | null;
+  contract_url?: string | null;
+  contract_links?: ActivityContractLink[];
   step_number: string | null;
   actual_start_date: string | null;
   created_at: string;
@@ -98,6 +100,29 @@ export interface Atividade {
   data_inicio?: string | null;
   data_fim?: string | null;
   contrato?: string;
+  contrato_url?: string | null;
+  contrato_links?: ActivityContractLink[];
+}
+
+export interface ActivityContractLink {
+  contract: string;
+  url: string | null;
+}
+
+export interface ContractLink {
+  id: string | null;
+  project_id: string;
+  project_name: string;
+  contract: string;
+  url: string | null;
+  activities_count: number;
+  updated_at: string | null;
+}
+
+export interface ContractLinkUpsert {
+  project_id: string;
+  contract: string;
+  url: string;
 }
 
 export interface StatusDetail {

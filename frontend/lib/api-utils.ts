@@ -99,6 +99,8 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
     data_inicio: activity.start_date,
     data_fim: prazoAtivo,
     contrato: activity.contract ?? "—",
+    contrato_url: activity.contract_url ?? null,
+    contrato_links: activity.contract_links ?? [],
   };
 }
 

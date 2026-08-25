@@ -17,14 +17,14 @@ const navItems: NavItem[] = [
   { name: "Atividades", href: "/atividades", icon: "▤" },
   { name: "Coordenadorias", href: "/coordenadorias", icon: "◔" },
   { name: "Planilhas", href: "/planilhas", icon: "☰" },
-  { name: "Usuários", href: "/usuarios", icon: "👥" },
-  { name: "Configuração", href: "/configuracao", icon: "⚙" },
+  { name: "Usuários", href: "/usuarios", icon: "♟" },
+  { name: "Contratos", href: "/contratos", icon: "§" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { isMobileOpen, setIsMobileOpen, isDesktopOpen, toggleSidebar } = useDashboard();
+  const { isMobileOpen, setIsMobileOpen, isDesktopOpen } = useDashboard();
 
   const filteredNavItems = navItems.filter((item) => {
     if (item.href === "/usuarios") {
@@ -35,7 +35,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Backdrop overlay para fechar no Mobile */}
       {isMobileOpen && (
         <div
           onClick={() => setIsMobileOpen(false)}
@@ -51,7 +50,6 @@ export function Sidebar() {
           ${isMobileOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}
         `}
       >
-        {/* Logo */}
         <div className="px-5 pb-6 flex items-center justify-between max-lg:pb-4">
           <Link href="/" className="flex items-center">
             <img
@@ -60,7 +58,6 @@ export function Sidebar() {
               className="h-[32px] w-auto object-contain"
             />
           </Link>
-          {/* Botão de fechar para Mobile */}
           <button
             onClick={() => setIsMobileOpen(false)}
             aria-label="Fechar menu"
@@ -70,7 +67,6 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Navegação simples sem grupos */}
         <nav className="flex flex-col flex-1 gap-1">
           <ul className="list-none m-0 p-0 flex flex-col w-full gap-1">
             {filteredNavItems.map((item) => {
@@ -99,7 +95,6 @@ export function Sidebar() {
             })}
           </ul>
         </nav>
-
       </aside>
     </>
   );

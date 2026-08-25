@@ -76,6 +76,7 @@ async def list_paginated_activities(
     import re
     from sqlalchemy import and_, cast, func, not_, or_, String
     from app.domain.activities.models import Activity
+    from app.domain.contract_links.models import ContractLink
     from app.domain.projects.schemas import PaginatedActivitiesOut, ActivityOutSchema
 
     def clean_coordenadoria_name(name: str) -> str:
@@ -86,6 +87,11 @@ async def list_paginated_activities(
         if match:
             return match.group(1).strip()
         return trimmed
+
+    def split_contracts(contract: str | None) -> list[str]:
+        if not contract:
+            return []
+        return [part.strip() for part in contract.split("/") if part.strip()]
 
     # 1. Obter metadados (todos os projetos e coordenadorias distintas)
     proj_result = await db.execute(select(Project.name).order_by(Project.name.asc()))
@@ -105,7 +111,11 @@ async def list_paginated_activities(
     coordenadorias = sorted(list(coordenadorias_set))
 
     # 2. Query paginada de atividades
-    query = select(Activity, Project.name.label("project_name")).join(Project)
+    query = (
+        select(Activity, Project.name.label("project_name"))
+        .select_from(Activity)
+        .join(Project, Project.id == Activity.project_id)
+    )
 
     # Aplicar filtros
     if search:
@@ -174,7 +184,43 @@ async def list_paginated_activities(
     rows = result.all()
 
     activities_out = []
+    contract_lookup: dict[tuple[UUID, str], str] = {}
+    needed_contracts = {
+        (activity.project_id, contract)
+        for activity, _project_name in rows
+        for contract in split_contracts(activity.contract)
+    }
+    if needed_contracts:
+        link_result = await db.execute(
+            select(ContractLink).where(
+                or_(
+                    *[
+                        and_(
+                            ContractLink.project_id == project_id,
+                            ContractLink.contract == contract,
+                        )
+                        for project_id, contract in needed_contracts
+                    ]
+                )
+            )
+        )
+        contract_lookup = {
+            (link.project_id, link.contract): link.url
+            for link in link_result.scalars().all()
+        }
+
     for activity, project_name in rows:
+        contract_links = [
+            {
+                "contract": contract,
+                "url": contract_lookup.get((activity.project_id, contract)),
+            }
+            for contract in split_contracts(activity.contract)
+        ]
+        first_contract_url = next(
+            (item["url"] for item in contract_links if item["url"]),
+            None,
+        )
         activities_out.append(
             ActivityOutSchema(
                 id=activity.id,
@@ -191,6 +237,8 @@ async def list_paginated_activities(
                 observations=activity.observations,
                 group_item=activity.group_item,
                 contract=activity.contract,
+                contract_url=first_contract_url,
+                contract_links=contract_links,
                 step_number=activity.step_number,
                 actual_start_date=activity.actual_start_date,
                 created_at=activity.created_at,

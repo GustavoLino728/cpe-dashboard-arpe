@@ -17,6 +17,8 @@ import {
   ApiActivity,
   ApiNotification,
   ApiUnreadCount,
+  ContractLink,
+  ContractLinkUpsert,
 } from "./api-types";
 import { mapApiToAtividade } from "./api-utils";
 
@@ -340,6 +342,18 @@ export async function fetchNotifications(
 
 export async function fetchUnreadCount(): Promise<ApiUnreadCount> {
   return apiFetch<ApiUnreadCount>("/api/v1/notifications/unread-count");
+}
+
+export async function fetchContractLinks(): Promise<ContractLink[]> {
+  return apiFetch<ContractLink[]>("/api/v1/contract-links");
+}
+
+export async function saveContractLink(data: ContractLinkUpsert): Promise<ContractLink> {
+  return apiFetch<ContractLink>("/api/v1/contract-links", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 }
 
 export async function markNotificationAsRead(
