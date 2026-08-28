@@ -75,6 +75,9 @@ class ActivityOutSchema(BaseModel):
     contract_links: list[dict[str, str | None]] = Field(default_factory=list)
     step_number: str | None = None
     actual_start_date: date | None = None
+    delay_justification_problem: str | None = None
+    delay_justification_action: str | None = None
+    delay_justification_responsible: str | None = None
     created_at: datetime
     updated_at: datetime
 
