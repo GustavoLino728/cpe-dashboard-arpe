@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 interface DonutData {
   name: string;
   value: number;
   color: string;
+  href?: string;
 }
 
 interface DonutChartProps {
@@ -16,6 +19,7 @@ interface DonutChartProps {
 
 export function DonutChart({ data, title }: DonutChartProps) {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -45,9 +49,19 @@ export function DonutChart({ data, title }: DonutChartProps) {
                   dataKey="value"
                   animationDuration={500}
                   isAnimationActive={true}
+                  onClick={(_, index) => {
+                    const href = data[index]?.href;
+                    if (href) {
+                      router.push(href);
+                    }
+                  }}
                 >
                   {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      className={entry.href ? "cursor-pointer outline-none" : undefined}
+                    />
                   ))}
                 </Pie>
                 <Tooltip
@@ -72,9 +86,11 @@ export function DonutChart({ data, title }: DonutChartProps) {
           </div>
         )}
 
-        {/* Total no centro */}
         {mounted && total > 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ transform: "translateY(-4px)" }}>
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+            style={{ transform: "translateY(-4px)" }}
+          >
             <span className="font-mono-kpi font-semibold text-[20px] text-ink select-none leading-none">
               {total}
             </span>
@@ -85,21 +101,43 @@ export function DonutChart({ data, title }: DonutChartProps) {
         )}
       </div>
 
-      {/* Legenda Customizada */}
       <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3 text-[11.5px] text-ink-soft w-full max-h-[60px] overflow-y-auto">
         {data.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-1.5 whitespace-nowrap">
-            <span
-              className="w-[8px] h-[8px] rounded-full shrink-0"
-              style={{ backgroundColor: item.color }}
-            />
-            <span className="truncate max-w-[120px]" title={item.name}>
-              {item.name}
-            </span>
-            <span className="font-mono-kpi font-medium text-ink">({item.value})</span>
-          </div>
+          <LegendItem key={idx} item={item} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function LegendItem({ item }: { item: DonutData }) {
+  const content = (
+    <>
+      <span
+        className="w-[8px] h-[8px] rounded-full shrink-0"
+        style={{ backgroundColor: item.color }}
+      />
+      <span className="truncate max-w-[120px]" title={item.name}>
+        {item.name}
+      </span>
+      <span className="font-mono-kpi font-medium text-ink">({item.value})</span>
+    </>
+  );
+
+  if (item.href) {
+    return (
+      <Link
+        href={item.href}
+        className="flex items-center gap-1.5 whitespace-nowrap rounded-sm outline-none hover:text-teal focus-visible:ring-2 focus-visible:ring-teal/40"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      {content}
     </div>
   );
 }

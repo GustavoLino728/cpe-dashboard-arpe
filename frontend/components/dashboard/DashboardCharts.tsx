@@ -1,6 +1,10 @@
 import React from "react";
 import { DonutChart } from "@/components/DonutChart";
 import {
+  ACTIVITY_STATUS_FILTER_BY_LABEL,
+  buildActivitiesHref,
+} from "@/lib/activity-filters";
+import {
   BarChart,
   Bar,
   XAxis,
@@ -11,20 +15,29 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+interface ChartItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
 interface DashboardChartsProps {
   mounted: boolean;
   loading: boolean;
   hasActivities: boolean;
-  donutCoordData: Array<{ name: string; value: number; color: string }>;
-  donutStatusData: Array<{ name: string; value: number; color: string }>;
-  donutRespData: Array<{ name: string; value: number; color: string }>;
+  donutCoordData: ChartItem[];
+  donutStatusData: ChartItem[];
+  donutRespData: ChartItem[];
   barChartData: Array<{
     name: string;
     "Concluído": number;
     "Em andamento": number;
     "Não Iniciado": number;
-    "Atrasado": number;
+    Atrasado: number;
   }>;
+  selectedCoord?: string;
+  selectedProject?: string;
+  includeCoordFilter?: boolean;
 }
 
 export function DashboardCharts({
@@ -35,10 +48,36 @@ export function DashboardCharts({
   donutStatusData,
   donutRespData,
   barChartData,
+  selectedCoord = "todas",
+  selectedProject = "todos",
+  includeCoordFilter = false,
 }: DashboardChartsProps) {
+  const activityFilterContext = {
+    selectedCoord,
+    selectedProject,
+    includeCoordFilter,
+  };
+
+  const linkedCoordData = donutCoordData.map((item) => ({
+    ...item,
+    href: buildActivitiesHref({ coordenadoria: item.name }, activityFilterContext),
+  }));
+
+  const linkedStatusData = donutStatusData.map((item) => ({
+    ...item,
+    href: buildActivitiesHref(
+      { status: ACTIVITY_STATUS_FILTER_BY_LABEL[item.name] },
+      activityFilterContext
+    ),
+  }));
+
+  const linkedRespData = donutRespData.map((item) => ({
+    ...item,
+    href: buildActivitiesHref({ responsavel: item.name }, activityFilterContext),
+  }));
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Donuts em Grid */}
       <section className="grid grid-cols-3 gap-5 max-xl:grid-cols-1">
         {loading ? (
           <>
@@ -49,22 +88,21 @@ export function DashboardCharts({
         ) : hasActivities ? (
           <>
             <DonutChart
-              data={donutCoordData}
+              data={linkedCoordData}
               title="Atividades por responsável"
             />
             <DonutChart
-              data={donutStatusData}
+              data={linkedStatusData}
               title="Distribuição por status"
             />
             <DonutChart
-              data={donutRespData}
+              data={linkedRespData}
               title="Atividades por setor (top 5)"
             />
           </>
         ) : null}
       </section>
 
-      {/* Gráfico de Barras Empilhado */}
       <section className="bg-panel border border-line/30 rounded-custom p-6 transition-all duration-200">
         <h2 className="font-display font-semibold text-[13.5px] text-ink mb-4">
           Atividades por mês e status

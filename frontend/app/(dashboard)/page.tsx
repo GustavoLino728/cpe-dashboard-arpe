@@ -131,6 +131,9 @@ export default function DashboardHome() {
         donutStatusData={charts.donutStatusData}
         donutRespData={charts.donutRespData}
         barChartData={charts.barChartData}
+        selectedCoord={selectedCoord}
+        selectedProject={selectedProject}
+        includeCoordFilter={scope === "coordenadoria"}
       />
 
     </div>

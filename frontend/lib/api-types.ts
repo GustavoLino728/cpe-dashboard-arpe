@@ -1,6 +1,7 @@
 export interface ApiActivity {
   id: string;
   project_id: string;
+  project_name?: string;
   description: string;
   sei_number: string | null;
   department: string[] | null;
@@ -16,6 +17,9 @@ export interface ApiActivity {
   contract_links?: ActivityContractLink[];
   step_number: string | null;
   actual_start_date: string | null;
+  delay_justification_problem?: string | null;
+  delay_justification_action?: string | null;
+  delay_justification_responsible?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,6 +94,8 @@ export interface ApiTimelineEvent {
 export type StatusType = "ok" | "warn" | "late" | "pending";
 
 export interface Atividade {
+  id: string;
+  project_id: string;
   atividade: string;
   coordenadoria: string;
   responsavel: string;
@@ -102,6 +108,20 @@ export interface Atividade {
   contrato?: string;
   contrato_url?: string | null;
   contrato_links?: ActivityContractLink[];
+  sei_number?: string | null;
+  working_days?: number | null;
+  deadline?: string | null;
+  new_date?: string | null;
+  raw_status?: string;
+  observations?: string | null;
+  group_item?: string | null;
+  step_number?: string | null;
+  actual_start_date?: string | null;
+  delay_justification_problem?: string | null;
+  delay_justification_action?: string | null;
+  delay_justification_responsible?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ActivityContractLink {

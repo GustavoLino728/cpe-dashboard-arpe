@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ActivityTable } from "@/components/ActivityTable";
 import {
   fetchPaginatedAtividades,
@@ -10,14 +10,18 @@ import {
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export default function AtividadesPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const coordParam = searchParams.get("coordenadoria");
   const projectParam = searchParams.get("project");
   const statusParam = searchParams.get("status");
   const prazoParam = searchParams.get("prazo");
+  const activityIdParam = searchParams.get("activity_id");
+  const activitySearchParam = searchParams.get("activity_search") || "";
+  const responsavelParam = searchParams.get("responsavel") || "";
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(activitySearchParam);
+  const [debouncedSearch, setDebouncedSearch] = useState(activitySearchParam);
   const [selectedCoord, setSelectedCoord] = useState<string>(coordParam || "todas");
   const [selectedProject, setSelectedProject] = useState<string>(projectParam || "todos");
   const [selectedStatus, setSelectedStatus] = useState<string>(statusParam || "todos");
@@ -40,8 +44,10 @@ export default function AtividadesPage() {
     setSelectedProject(projectParam || "todos");
     setSelectedStatus(statusParam || "todos");
     setSelectedPrazo(prazoParam || "todos");
+    setSearch(activitySearchParam);
+    setDebouncedSearch(activitySearchParam);
     setPage(1);
-  }, [coordParam, projectParam, statusParam, prazoParam]);
+  }, [coordParam, projectParam, statusParam, prazoParam, activitySearchParam]);
 
   // Debounce search input
   useEffect(() => {
@@ -61,12 +67,33 @@ export default function AtividadesPage() {
       const data = await fetchPaginatedAtividades(
         page,
         limit,
-        debouncedSearch,
+        activityIdParam ? "" : debouncedSearch,
         selectedCoord,
         selectedProject,
         selectedStatus,
-        selectedPrazo
+        selectedPrazo,
+        activityIdParam || "",
+        responsavelParam
       );
+      if (activityIdParam && data.total === 0 && activitySearchParam) {
+        const fallbackData = await fetchPaginatedAtividades(
+          1,
+          limit,
+          activitySearchParam,
+          "todas",
+          "todos",
+          "todos",
+          "todos",
+          "",
+          responsavelParam
+        );
+        if (requestId !== latestRequestId.current) return;
+        setAtividades(fallbackData.activities);
+        setTotal(fallbackData.total);
+        setCoordenadorias(fallbackData.coordenadorias);
+        setProjetos(fallbackData.projetos);
+        return;
+      }
       if (requestId !== latestRequestId.current) return;
       setAtividades(data.activities);
       setTotal(data.total);
@@ -82,7 +109,7 @@ export default function AtividadesPage() {
       if (requestId !== latestRequestId.current) return;
       setLoading(false);
     }
-  }, [page, debouncedSearch, selectedCoord, selectedProject, selectedStatus, selectedPrazo]);
+  }, [page, debouncedSearch, selectedCoord, selectedProject, selectedStatus, selectedPrazo, activityIdParam, activitySearchParam, responsavelParam]);
 
   useEffect(() => {
     loadData();
@@ -115,6 +142,11 @@ export default function AtividadesPage() {
     setSelectedStatus("todos");
     setSelectedPrazo("todos");
     setPage(1);
+    if (activityIdParam) {
+      router.replace("/atividades");
+    } else if (responsavelParam) {
+      router.replace("/atividades");
+    }
   };
 
   if (error && !loading) {
@@ -246,7 +278,11 @@ export default function AtividadesPage() {
       {/* Tabela de Atividades */}
       <div className="flex flex-col gap-3">
         <h2 className="font-display font-semibold text-[13.5px] text-ink px-1 select-none">
-          Todas as atividades
+          {activityIdParam
+            ? "Atividade referenciada"
+            : responsavelParam
+              ? `Atividades de ${responsavelParam}`
+              : "Todas as atividades"}
         </h2>
         {loading ? (
           <div className="bg-panel border border-line/30 rounded-custom p-6 h-[300px] animate-pulse flex items-center justify-center text-[11px] text-ink-soft">

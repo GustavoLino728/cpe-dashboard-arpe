@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/ThemeProvider";
@@ -36,6 +35,11 @@ function formatRelativeTime(dateString: string): string {
   } catch {
     return "";
   }
+}
+
+function extractActivitySearch(content: string): string | null {
+  const match = content.match(/atividade\s+'([^']+)'/i);
+  return match?.[1]?.trim() || null;
 }
 
 export function Topbar() {
@@ -155,6 +159,16 @@ export function Topbar() {
                       onClick={() => {
                         if (!notif.is_read) {
                           markAsRead(notif.id);
+                        }
+                        if (notif.activity_id) {
+                          const params = new URLSearchParams({
+                            activity_id: notif.activity_id,
+                          });
+                          const activitySearch = extractActivitySearch(notif.content);
+                          if (activitySearch) {
+                            params.set("activity_search", activitySearch);
+                          }
+                          router.push(`/atividades?${params.toString()}`);
                         }
                       }}
                       className={`flex gap-3 p-4 hover:bg-line/5 cursor-pointer transition-colors relative ${

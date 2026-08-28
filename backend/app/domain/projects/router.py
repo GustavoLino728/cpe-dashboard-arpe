@@ -67,8 +67,10 @@ async def list_paginated_activities(
     db: AsyncSession = Depends(get_db),
     page: int = 1,
     limit: int = 15,
+    activity_id: UUID | None = None,
     search: str | None = None,
     coordenadoria: str | None = None,
+    responsavel: str | None = None,
     project: str | None = None,
     status_filter: str | None = None,
     prazo: int | None = None,
@@ -118,6 +120,9 @@ async def list_paginated_activities(
     )
 
     # Aplicar filtros
+    if activity_id:
+        query = query.filter(Activity.id == activity_id)
+
     if search:
         search_filter = f"%{search}%"
         query = query.filter(
@@ -132,6 +137,9 @@ async def list_paginated_activities(
 
     if coordenadoria and coordenadoria != "todas":
         query = query.filter(cast(Activity.department, String).ilike(f"%{coordenadoria}%"))
+
+    if responsavel:
+        query = query.filter(cast(Activity.department, String).ilike(f"%{responsavel}%"))
 
     effective_deadline = func.coalesce(Activity.new_date, Activity.deadline)
     is_done = Activity.status.ilike("%conclu%")
@@ -241,6 +249,9 @@ async def list_paginated_activities(
                 contract_links=contract_links,
                 step_number=activity.step_number,
                 actual_start_date=activity.actual_start_date,
+                delay_justification_problem=activity.delay_justification_problem,
+                delay_justification_action=activity.delay_justification_action,
+                delay_justification_responsible=activity.delay_justification_responsible,
                 created_at=activity.created_at,
                 updated_at=activity.updated_at
             )

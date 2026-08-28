@@ -87,6 +87,8 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
   }
 
   return {
+    id: activity.id,
+    project_id: activity.project_id,
     atividade: activity.description,
     coordenadoria: cleanedDept,
     responsavel:
@@ -101,6 +103,20 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
     contrato: activity.contract ?? "—",
     contrato_url: activity.contract_url ?? null,
     contrato_links: activity.contract_links ?? [],
+    sei_number: activity.sei_number,
+    working_days: activity.working_days,
+    deadline: activity.deadline,
+    new_date: activity.new_date,
+    raw_status: activity.status,
+    observations: activity.observations,
+    group_item: activity.group_item,
+    step_number: activity.step_number,
+    actual_start_date: activity.actual_start_date,
+    delay_justification_problem: activity.delay_justification_problem ?? null,
+    delay_justification_action: activity.delay_justification_action ?? null,
+    delay_justification_responsible: activity.delay_justification_responsible ?? null,
+    created_at: activity.created_at,
+    updated_at: activity.updated_at,
   };
 }
 
