@@ -70,6 +70,7 @@ async def list_paginated_activities(
     activity_id: UUID | None = None,
     search: str | None = None,
     coordenadoria: str | None = None,
+    responsavel: str | None = None,
     project: str | None = None,
     status_filter: str | None = None,
     prazo: int | None = None,
@@ -136,6 +137,9 @@ async def list_paginated_activities(
 
     if coordenadoria and coordenadoria != "todas":
         query = query.filter(cast(Activity.department, String).ilike(f"%{coordenadoria}%"))
+
+    if responsavel:
+        query = query.filter(cast(Activity.department, String).ilike(f"%{responsavel}%"))
 
     effective_deadline = func.coalesce(Activity.new_date, Activity.deadline)
     is_done = Activity.status.ilike("%conclu%")

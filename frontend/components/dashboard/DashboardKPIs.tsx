@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { KpiCard } from "@/components/KpiCard";
+import { buildActivitiesHref } from "@/lib/activity-filters";
 import {
   ClipboardList,
   Clock,
@@ -41,23 +42,10 @@ export function DashboardKPIs({
   selectedProject = "todos",
   includeCoordFilter = false,
 }: DashboardKPIsProps) {
-  const buildActivitiesHref = (filters: Record<string, string>) => {
-    const params = new URLSearchParams();
-
-    if (includeCoordFilter && selectedCoord !== "todas") {
-      params.set("coordenadoria", selectedCoord);
-    }
-
-    if (selectedProject !== "todos") {
-      params.set("project", selectedProject);
-    }
-
-    Object.entries(filters).forEach(([key, value]) => {
-      params.set(key, value);
-    });
-
-    const query = params.toString();
-    return query ? `/atividades?${query}` : "/atividades";
+  const activityFilterContext = {
+    selectedCoord,
+    selectedProject,
+    includeCoordFilter,
   };
 
   const kpis = [
@@ -66,56 +54,56 @@ export function DashboardKPIs({
       label: "Atividades",
       icon: <ClipboardList className="w-5 h-5 shrink-0" />,
       accentColor: "#3E8E6D",
-      href: buildActivitiesHref({}),
+      href: buildActivitiesHref({}, activityFilterContext),
     },
     {
       value: notStarted,
       label: "Não Iniciadas",
       icon: <PauseCircle className="w-5 h-5 shrink-0" />,
       accentColor: "#6B7280",
-      href: buildActivitiesHref({ status: "pending" }),
+      href: buildActivitiesHref({ status: "pending" }, activityFilterContext),
     },
     {
       value: progress,
       label: "Em andamento",
       icon: <Clock className="w-5 h-5 shrink-0" />,
       accentColor: "#5B95C4",
-      href: buildActivitiesHref({ status: "warn" }),
+      href: buildActivitiesHref({ status: "warn" }, activityFilterContext),
     },
     {
       value: `${donePercent}%`,
       label: "Concluídas",
       icon: <CheckCircle className="w-5 h-5 shrink-0" />,
       accentColor: "#1B7F79",
-      href: buildActivitiesHref({ status: "ok" }),
+      href: buildActivitiesHref({ status: "ok" }, activityFilterContext),
     },
     {
       value: deadlines7,
       label: "Prazos críticos - 7 dias",
       icon: <AlertTriangle className="w-5 h-5 shrink-0" />,
       accentColor: "#C4432D",
-      href: buildActivitiesHref({ prazo: "7" }),
+      href: buildActivitiesHref({ prazo: "7" }, activityFilterContext),
     },
     {
       value: deadlines15,
       label: "Prazos críticos - 15 dias",
       icon: <Timer className="w-5 h-5 shrink-0" />,
       accentColor: "#D97706",
-      href: buildActivitiesHref({ prazo: "15" }),
+      href: buildActivitiesHref({ prazo: "15" }, activityFilterContext),
     },
     {
       value: deadlines30,
       label: "Prazos críticos - 30 dias",
       icon: <CalendarClock className="w-5 h-5 shrink-0" />,
       accentColor: "#D99A4E",
-      href: buildActivitiesHref({ prazo: "30" }),
+      href: buildActivitiesHref({ prazo: "30" }, activityFilterContext),
     },
     {
       value: late,
       label: "Atividades atrasadas",
       icon: <TriangleAlert className="w-5 h-5 shrink-0" />,
       accentColor: "#B91C1C",
-      href: buildActivitiesHref({ status: "late" }),
+      href: buildActivitiesHref({ status: "late" }, activityFilterContext),
     },
   ];
 

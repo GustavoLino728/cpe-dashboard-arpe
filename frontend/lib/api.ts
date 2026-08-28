@@ -161,7 +161,8 @@ export async function fetchPaginatedAtividades(
   project = "",
   status = "",
   prazo = "",
-  activityId = ""
+  activityId = "",
+  responsavel = ""
 ): Promise<PaginatedAtividades> {
   const params = new URLSearchParams();
   params.append("page", page.toString());
@@ -169,6 +170,7 @@ export async function fetchPaginatedAtividades(
   if (activityId) params.append("activity_id", activityId);
   if (search) params.append("search", search);
   if (coordenadoria && coordenadoria !== "todas") params.append("coordenadoria", coordenadoria);
+  if (responsavel) params.append("responsavel", responsavel);
   if (project && project !== "todos") params.append("project", project);
   if (status && status !== "todos") params.append("status_filter", status);
   if (prazo && prazo !== "todos") params.append("prazo", prazo);

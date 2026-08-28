@@ -18,6 +18,7 @@ export default function AtividadesPage() {
   const prazoParam = searchParams.get("prazo");
   const activityIdParam = searchParams.get("activity_id");
   const activitySearchParam = searchParams.get("activity_search") || "";
+  const responsavelParam = searchParams.get("responsavel") || "";
 
   const [search, setSearch] = useState(activitySearchParam);
   const [debouncedSearch, setDebouncedSearch] = useState(activitySearchParam);
@@ -71,7 +72,8 @@ export default function AtividadesPage() {
         selectedProject,
         selectedStatus,
         selectedPrazo,
-        activityIdParam || ""
+        activityIdParam || "",
+        responsavelParam
       );
       if (activityIdParam && data.total === 0 && activitySearchParam) {
         const fallbackData = await fetchPaginatedAtividades(
@@ -81,7 +83,9 @@ export default function AtividadesPage() {
           "todas",
           "todos",
           "todos",
-          "todos"
+          "todos",
+          "",
+          responsavelParam
         );
         if (requestId !== latestRequestId.current) return;
         setAtividades(fallbackData.activities);
@@ -105,7 +109,7 @@ export default function AtividadesPage() {
       if (requestId !== latestRequestId.current) return;
       setLoading(false);
     }
-  }, [page, debouncedSearch, selectedCoord, selectedProject, selectedStatus, selectedPrazo, activityIdParam, activitySearchParam]);
+  }, [page, debouncedSearch, selectedCoord, selectedProject, selectedStatus, selectedPrazo, activityIdParam, activitySearchParam, responsavelParam]);
 
   useEffect(() => {
     loadData();
@@ -139,6 +143,8 @@ export default function AtividadesPage() {
     setSelectedPrazo("todos");
     setPage(1);
     if (activityIdParam) {
+      router.replace("/atividades");
+    } else if (responsavelParam) {
       router.replace("/atividades");
     }
   };
@@ -272,7 +278,11 @@ export default function AtividadesPage() {
       {/* Tabela de Atividades */}
       <div className="flex flex-col gap-3">
         <h2 className="font-display font-semibold text-[13.5px] text-ink px-1 select-none">
-          {activityIdParam ? "Atividade referenciada" : "Todas as atividades"}
+          {activityIdParam
+            ? "Atividade referenciada"
+            : responsavelParam
+              ? `Atividades de ${responsavelParam}`
+              : "Todas as atividades"}
         </h2>
         {loading ? (
           <div className="bg-panel border border-line/30 rounded-custom p-6 h-[300px] animate-pulse flex items-center justify-center text-[11px] text-ink-soft">
