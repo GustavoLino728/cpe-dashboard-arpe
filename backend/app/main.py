@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
     from app.domain.coordenadorias.models import Coordenadoria
     from app.domain.contract_links.models import ContractLink  # noqa: F401
 
-    from app import seed_admin
+    from app.scripts.seed_admin import seed_admin
 
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     import asyncio
