@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI):
     logger = logging.getLogger("Gestão de Projetos")
     logger.info("🚀 Gestão de Projetos - API iniciado")
 
+    # --- Imports tardios (evita import circular / dependência de env no topo) ---
     from app.database.base import Base
     from app.database.session import engine
     from app.domain.activities.models import Activity
@@ -39,52 +40,59 @@ async def lifespan(app: FastAPI):
     from app.domain.users.models import User
     from app.domain.notifications.models import Notification
     from app.domain.coordenadorias.models import Coordenadoria
-    from app.domain.contract_links.models import ContractLink
-    
+    from app.domain.contract_links.models import ContractLink  # noqa: F401
+
+    from app import seed_admin
+
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     import asyncio
     from app.domain.projects.services import sync_projects_from_google_sheets
     from app.scripts.check_deadlines import check_deadlines_job
 
+    if not settings.is_production:
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("✅ [dev] Tabelas verificadas/criadas via create_all.")
+        except Exception as e:
+            logger.error(f"❌ Erro no create_all: {str(e)}")
+    else:
+        logger.info(
+            "ℹ️  create_all desabilitado em produção. "
+            "Schema gerenciado por Alembic (rode `alembic upgrade head` no deploy)."
+        )
+
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("✅ Tabelas de banco de dados verificadas/criadas com sucesso")
+        await seed_admin()
     except Exception as e:
-        logger.error(f"❌ Erro ao inicializar tabelas do banco de dados: {str(e)}")
+        logger.error(f"❌ Erro ao executar seed do admin: {str(e)}")
 
-    # Configuração e inicialização do agendador automático (15 minutos)
     scheduler = AsyncIOScheduler()
-    
-    # Adiciona o job para rodar a cada 15 minutos
-    scheduler.add_job(
-        sync_projects_from_google_sheets, 
-        'interval', 
-        minutes=15, 
-        id='google_sheets_sync_job',
-        replace_existing=True
-    )
 
-    # Adiciona o job para rodar diariamente às 8h
+    scheduler.add_job(
+        sync_projects_from_google_sheets,
+        "interval",
+        minutes=15,
+        id="google_sheets_sync_job",
+        replace_existing=True,
+    )
     scheduler.add_job(
         check_deadlines_job,
-        'cron',
+        "cron",
         hour=8,
         minute=0,
-        id='check_deadlines_job',
-        replace_existing=True
+        id="check_deadlines_job",
+        replace_existing=True,
     )
-    
+
     scheduler.start()
     logger.info("⏰ Agendador de sincronização automática ativado (intervalo: 15 minutos)")
     logger.info("⏰ Agendador de checagem de prazos ativado (diariamente às 08:00)")
-    
-    # Dispara uma primeira sincronização em background logo após o startup para atualizar os dados
+
     asyncio.create_task(sync_projects_from_google_sheets())
 
     yield
-    
-    # Desliga o agendador ao encerrar o servidor
+
     scheduler.shutdown()
     logger.info("⏰ Agendador de sincronização encerrado")
     logger.info("🛑 Gestão de Projetos - API encerrado")
@@ -125,5 +133,6 @@ def create_app() -> FastAPI:
         return {"status": "ok", "env": settings.app_env}
 
     return app
+
 
 app = create_app()
