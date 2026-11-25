@@ -30,6 +30,16 @@ class UnauthorizedError(AppException):
         super().__init__(message, status.HTTP_401_UNAUTHORIZED)
 
 
+class TooManyRequestsError(AppException):
+    def __init__(
+        self,
+        message: str = "Muitas requisições. Tente novamente em instantes.",
+        retry_after_seconds: int = 60,
+    ):
+        self.retry_after_seconds = retry_after_seconds
+        super().__init__(message, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
 # HTTP shortcuts (para uso nos routers quando necessário)
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,

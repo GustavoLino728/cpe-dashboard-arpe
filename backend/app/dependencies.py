@@ -65,8 +65,12 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 def require_role(role: str):
+    return require_roles(role)
+
+
+def require_roles(*roles: str):
     async def dependency(current_user: CurrentUser) -> User:
-        if current_user.role != role:
+        if current_user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Você não tem permissão para acessar este recurso.",
@@ -74,4 +78,6 @@ def require_role(role: str):
         return current_user
     return dependency
 
+
 AdminUser = Annotated[User, Depends(require_role("admin"))]
+SyncAuthorizedUser = Annotated[User, Depends(require_roles("admin", "coordenador"))]

@@ -2,24 +2,52 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from app.core.exceptions import TooManyRequestsError
 from app.database.session import get_db
-from app.domain.projects.schemas import ProjectSchema, ProjectSimpleOut, PaginatedActivitiesOut
+from app.dependencies import CurrentUser, SyncAuthorizedUser
+from app.domain.projects.schemas import (
+    PaginatedActivitiesOut,
+    ProjectSchema,
+    ProjectSimpleOut,
+    SyncStatusOut,
+)
 from app.domain.projects.models import Project
-from app.domain.projects.services import sync_projects_from_google_sheets
+from app.domain.projects.services import (
+    get_manual_sync_status,
+    sync_projects_from_google_sheets,
+)
 from uuid import UUID
 from datetime import date, timedelta
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
+
+@router.get("/sync/status", response_model=SyncStatusOut)
+async def sync_status(
+    _: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """Retorna o status da última sincronização e se o cooldown manual (1 min) está ativo."""
+    return await get_manual_sync_status(db)
+
+
 @router.post("/sync", response_model=list[ProjectSchema], status_code=status.HTTP_200_OK)
-async def sync_google_sheets():
+async def sync_google_sheets(
+    _: SyncAuthorizedUser,
+):
     """
-    Sincroniza os projetos utilizando a API oficial do Google Sheets via Conta de Serviço (Service Account).
-    A URL da planilha é obtida a partir da variável de ambiente GOOGLE_SHEET_URL do backend.
+    Sincroniza a aba 'Concessão' via Google Sheets API (Service Account ou API Key).
+    Restrito a admin/coordenador e protegido por cooldown manual de 1 minuto.
     """
     try:
-        saved_projects = await sync_projects_from_google_sheets()
+        saved_projects = await sync_projects_from_google_sheets(triggered_by="manual")
         return saved_projects
+    except TooManyRequestsError as tmre:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=tmre.message,
+            headers={"Retry-After": str(tmre.retry_after_seconds)},
+        )
     except ValueError as ve:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,7 +63,7 @@ async def sync_google_sheets():
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
                 f"Erro ao sincronizar com Google Sheets: {str(e)}. "
-                "Verifique as variáveis de ambiente (incluindo GOOGLE_CREDENTIALS) e o arquivo credentials.json."
+                "Verifique GOOGLE_SHEET_URL, GOOGLE_API_KEY ou credentials.json."
             )
         )
 
@@ -159,6 +187,7 @@ async def list_paginated_activities(
             query = query.filter(
                 and_(
                     or_(
+                        Activity.status.ilike("%iniciar%"),
                         Activity.status.ilike("%iniciado%"),
                         Activity.status.ilike("%não iniciado%"),
                     ),
@@ -234,21 +263,43 @@ async def list_paginated_activities(
                 id=activity.id,
                 project_id=activity.project_id,
                 project_name=project_name,
+                source_row_key=activity.source_row_key,
+                mrae=activity.mrae,
+                instrument=activity.instrument,
+                clause=activity.clause,
+                phase=activity.phase,
+                thematic_group=activity.thematic_group,
+                nature=activity.nature,
                 description=activity.description,
+                prior_step=activity.prior_step,
+                prior_step_deadline=activity.prior_step_deadline,
+                prior_step_deadline_text=activity.prior_step_deadline_text,
+                primary_responsible=activity.primary_responsible,
                 sei_number=activity.sei_number,
                 department=activity.department,
+                contractual_deadline_text=activity.contractual_deadline_text,
+                periodicity=activity.periodicity,
                 start_date=activity.start_date,
+                initial_deadline_text=activity.initial_deadline_text,
                 deadline=activity.deadline,
+                final_deadline_text=activity.final_deadline_text,
                 working_days=activity.working_days,
                 new_date=activity.new_date,
                 status=activity.status,
                 observations=activity.observations,
+                object_summary=activity.object_summary,
+                arpe_entry_date=activity.arpe_entry_date,
+                arpe_final_date=activity.arpe_final_date,
+                arpe_status=activity.arpe_status,
+                sei_2=activity.sei_2,
+                summary=activity.summary,
                 group_item=activity.group_item,
                 contract=activity.contract,
                 contract_url=first_contract_url,
                 contract_links=contract_links,
                 step_number=activity.step_number,
                 actual_start_date=activity.actual_start_date,
+                actual_end_date=activity.actual_end_date,
                 delay_justification_problem=activity.delay_justification_problem,
                 delay_justification_action=activity.delay_justification_action,
                 delay_justification_responsible=activity.delay_justification_responsible,
@@ -268,7 +319,11 @@ async def list_paginated_activities(
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_project(project_id: UUID, db: AsyncSession = Depends(get_db)):
+async def delete_project(
+    project_id: UUID,
+    _: SyncAuthorizedUser,
+    db: AsyncSession = Depends(get_db),
+):
     """
     Remove um projeto e todas as suas atividades associadas.
     """
