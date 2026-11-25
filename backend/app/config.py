@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     app_debug: bool = False
     google_sheet_url: str | None = None
     google_credentials: str | None = None
+    google_api_key: str | None = None
 
     # Database
     database_url: str
