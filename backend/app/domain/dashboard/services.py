@@ -85,9 +85,12 @@ async def resolve_project(db: AsyncSession, identifier: str) -> Project:
 
 def get_activity_phase(act) -> str:
     """
-    Classifica a atividade em uma fase baseada na data de referência.
-    Utiliza new_date (novo prazo) ou deadline (prazo original), caindo para start_date se ambos forem nulos.
+    Classifica a atividade em uma fase.
+    Prioriza o campo explícito 'phase' da planilha (ex.: Transição, Operação) com fallback por data.
     """
+    if getattr(act, "phase", None):
+        return act.phase
+
     ref_date = act.new_date or act.deadline or act.start_date
     if not ref_date:
         return "Sem Fase"
@@ -128,7 +131,9 @@ async def get_project_summary(db: AsyncSession, project: str) -> ProjectSummaryS
     total = len(activities)
     concluidas = sum(1 for a in activities if a.status == "Concluído")
     em_andamento = sum(1 for a in activities if a.status == "Em andamento")
-    nao_iniciadas = sum(1 for a in activities if a.status == "Não Iniciado")
+    nao_iniciadas = sum(
+        1 for a in activities if a.status not in ("Concluído", "Em andamento")
+    )
 
     percentual = round((concluidas / total) * 100, 1) if total > 0 else 0.0
 
