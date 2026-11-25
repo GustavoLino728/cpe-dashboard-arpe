@@ -36,9 +36,9 @@ async def lifespan(app: FastAPI):
     from app.database.base import Base
     from app.database.session import engine
     from app.domain.activities.models import Activity
-    from app.domain.projects.models import Project
+    from app.domain.projects.models import Project, SyncLog  # noqa: F401
     from app.domain.users.models import User
-    from app.domain.notifications.models import Notification
+    from app.domain.notifications.models import Notification, ActivityAlertLog  # noqa: F401
     from app.domain.coordenadorias.models import Coordenadoria
     from app.domain.contract_links.models import ContractLink  # noqa: F401
 
