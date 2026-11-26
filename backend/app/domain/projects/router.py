@@ -1,23 +1,28 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+
 from app.core.exceptions import TooManyRequestsError
 from app.database.session import get_db
 from app.dependencies import CurrentUser, SyncAuthorizedUser
+from app.domain.projects.activity_query import (
+    ActivityQueryParams,
+    query_paginated_activities,
+)
+from app.domain.projects.models import Project
 from app.domain.projects.schemas import (
     PaginatedActivitiesOut,
     ProjectSchema,
     ProjectSimpleOut,
     SyncStatusOut,
 )
-from app.domain.projects.models import Project
 from app.domain.projects.services import (
     get_manual_sync_status,
     sync_projects_from_google_sheets,
 )
-from uuid import UUID
-from datetime import date, timedelta
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -97,225 +102,44 @@ async def list_paginated_activities(
     limit: int = 15,
     activity_id: UUID | None = None,
     search: str | None = None,
+    mrae: str | None = None,
+    instrumento: str | None = None,
+    mes_inicial: str | None = None,
+    mes_final: str | None = None,
+    executor: str | None = None,
     coordenadoria: str | None = None,
     responsavel: str | None = None,
     project: str | None = None,
     status_filter: str | None = None,
     prazo: int | None = None,
 ):
-    import re
-    from sqlalchemy import and_, cast, func, not_, or_, String
-    from app.domain.activities.models import Activity
-    from app.domain.contract_links.models import ContractLink
-    from app.domain.projects.schemas import PaginatedActivitiesOut, ActivityOutSchema
-
-    def clean_coordenadoria_name(name: str) -> str:
-        if not name:
-            return ""
-        trimmed = name.strip()
-        match = re.match(r"^ARPE\s*\(([^)]+)\)$", trimmed, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
-        return trimmed
-
-    def split_contracts(contract: str | None) -> list[str]:
-        if not contract:
-            return []
-        return [part.strip() for part in contract.split("/") if part.strip()]
-
-    # 1. Obter metadados (todos os projetos e coordenadorias distintas)
-    proj_result = await db.execute(select(Project.name).order_by(Project.name.asc()))
-    projetos = [p for p in proj_result.scalars().all()]
-
-    dept_result = await db.execute(select(Activity.department))
-    dept_lists = dept_result.scalars().all()
-    
-    coordenadorias_set = set()
-    for depts in dept_lists:
-        if depts:
-            for dept in depts:
-                cleaned = clean_coordenadoria_name(dept)
-                if cleaned and cleaned != "Sem Setor":
-                    coordenadorias_set.add(cleaned)
-                    
-    coordenadorias = sorted(list(coordenadorias_set))
-
-    # 2. Query paginada de atividades
-    query = (
-        select(Activity, Project.name.label("project_name"))
-        .select_from(Activity)
-        .join(Project, Project.id == Activity.project_id)
-    )
-
-    # Aplicar filtros
-    if activity_id:
-        query = query.filter(Activity.id == activity_id)
-
-    if search:
-        search_filter = f"%{search}%"
-        query = query.filter(
-            Activity.description.ilike(search_filter) |
-            Activity.contract.ilike(search_filter) |
-            Activity.step_number.ilike(search_filter) |
-            Project.name.ilike(search_filter)
-        )
-
-    if project and project != "todos":
-        query = query.filter(Project.name == project)
-
-    if coordenadoria and coordenadoria != "todas":
-        query = query.filter(cast(Activity.department, String).ilike(f"%{coordenadoria}%"))
-
-    if responsavel:
-        query = query.filter(cast(Activity.department, String).ilike(f"%{responsavel}%"))
-
-    effective_deadline = func.coalesce(Activity.new_date, Activity.deadline)
-    is_done = Activity.status.ilike("%conclu%")
-    is_late = and_(not_(is_done), effective_deadline.is_not(None), effective_deadline < date.today())
-
-    if status_filter and status_filter != "todos":
-        if status_filter == "ok":
-            query = query.filter(is_done)
-        elif status_filter == "warn":
-            query = query.filter(
-                and_(
-                    Activity.status.ilike("%andamento%"),
-                    not_(is_late),
-                )
-            )
-        elif status_filter == "pending":
-            query = query.filter(
-                and_(
-                    or_(
-                        Activity.status.ilike("%iniciar%"),
-                        Activity.status.ilike("%iniciado%"),
-                        Activity.status.ilike("%não iniciado%"),
-                    ),
-                    not_(is_late),
-                )
-            )
-        elif status_filter == "late":
-            query = query.filter(is_late)
-
-    if prazo:
-        prazo_final = date.today() + timedelta(days=prazo)
-        query = query.filter(
-            and_(
-                not_(is_done),
-                effective_deadline.is_not(None),
-                effective_deadline >= date.today(),
-                effective_deadline <= prazo_final,
-            )
-        )
-
-    # Obter contagem total com filtros aplicados
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-    total = total_result.scalar() or 0
-
-    # Paginar e ordernar
-    offset = (page - 1) * limit
-    query = query.order_by(Project.name.asc(), Activity.step_number.asc()).limit(limit).offset(offset)
-    
-    result = await db.execute(query)
-    rows = result.all()
-
-    activities_out = []
-    contract_lookup: dict[tuple[UUID, str], str] = {}
-    needed_contracts = {
-        (activity.project_id, contract)
-        for activity, _project_name in rows
-        for contract in split_contracts(activity.contract)
-    }
-    if needed_contracts:
-        link_result = await db.execute(
-            select(ContractLink).where(
-                or_(
-                    *[
-                        and_(
-                            ContractLink.project_id == project_id,
-                            ContractLink.contract == contract,
-                        )
-                        for project_id, contract in needed_contracts
-                    ]
-                )
-            )
-        )
-        contract_lookup = {
-            (link.project_id, link.contract): link.url
-            for link in link_result.scalars().all()
-        }
-
-    for activity, project_name in rows:
-        contract_links = [
-            {
-                "contract": contract,
-                "url": contract_lookup.get((activity.project_id, contract)),
-            }
-            for contract in split_contracts(activity.contract)
-        ]
-        first_contract_url = next(
-            (item["url"] for item in contract_links if item["url"]),
-            None,
-        )
-        activities_out.append(
-            ActivityOutSchema(
-                id=activity.id,
-                project_id=activity.project_id,
-                project_name=project_name,
-                source_row_key=activity.source_row_key,
-                mrae=activity.mrae,
-                instrument=activity.instrument,
-                clause=activity.clause,
-                phase=activity.phase,
-                thematic_group=activity.thematic_group,
-                nature=activity.nature,
-                description=activity.description,
-                prior_step=activity.prior_step,
-                prior_step_deadline=activity.prior_step_deadline,
-                prior_step_deadline_text=activity.prior_step_deadline_text,
-                primary_responsible=activity.primary_responsible,
-                sei_number=activity.sei_number,
-                department=activity.department,
-                contractual_deadline_text=activity.contractual_deadline_text,
-                periodicity=activity.periodicity,
-                start_date=activity.start_date,
-                initial_deadline_text=activity.initial_deadline_text,
-                deadline=activity.deadline,
-                final_deadline_text=activity.final_deadline_text,
-                working_days=activity.working_days,
-                new_date=activity.new_date,
-                status=activity.status,
-                observations=activity.observations,
-                object_summary=activity.object_summary,
-                arpe_entry_date=activity.arpe_entry_date,
-                arpe_final_date=activity.arpe_final_date,
-                arpe_status=activity.arpe_status,
-                sei_2=activity.sei_2,
-                summary=activity.summary,
-                group_item=activity.group_item,
-                contract=activity.contract,
-                contract_url=first_contract_url,
-                contract_links=contract_links,
-                step_number=activity.step_number,
-                actual_start_date=activity.actual_start_date,
-                actual_end_date=activity.actual_end_date,
-                delay_justification_problem=activity.delay_justification_problem,
-                delay_justification_action=activity.delay_justification_action,
-                delay_justification_responsible=activity.delay_justification_responsible,
-                created_at=activity.created_at,
-                updated_at=activity.updated_at
-            )
-        )
-
-    return PaginatedActivitiesOut(
-        total=total,
+    """
+    Lista atividades paginadas com filtros combinaveis (MRAE, Instrumento, Periodo, Executor, Status),
+    busca textual full-row, 5 KPIs reativos e opcoes dinamicas de filtro.
+    """
+    params = ActivityQueryParams(
         page=page,
         limit=limit,
-        activities=activities_out,
-        coordenadorias=coordenadorias,
-        projetos=projetos
+        activity_id=activity_id,
+        search=search,
+        mrae=mrae,
+        instrumento=instrumento,
+        mes_inicial=mes_inicial,
+        mes_final=mes_final,
+        executor=executor,
+        coordenadoria=coordenadoria,
+        responsavel=responsavel,
+        project=project,
+        status_filter=status_filter,
+        prazo=prazo,
     )
+    try:
+        return await query_paginated_activities(db, params)
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve),
+        )
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
