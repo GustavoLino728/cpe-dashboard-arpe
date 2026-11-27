@@ -138,10 +138,22 @@ class ActivityOutSchema(BaseModel):
     updated_at: datetime
 
 
+class ActivityKpisOut(BaseModel):
+    total: int = 0
+    concluidas: int = 0
+    atrasadas: int = 0
+    em_andamento: int = 0
+    a_iniciar: int = 0
+
+
 class PaginatedActivitiesOut(BaseModel):
     total: int
     page: int
     limit: int
     activities: list[ActivityOutSchema]
+    kpis: ActivityKpisOut = Field(default_factory=ActivityKpisOut)
     coordenadorias: list[str]
     projetos: list[str]
+    mraes: list[str] = Field(default_factory=list)
+    instrumentos: list[str] = Field(default_factory=list)
+    executores: list[str] = Field(default_factory=list)
