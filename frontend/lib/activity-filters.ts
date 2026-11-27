@@ -19,7 +19,7 @@ export function buildActivitiesHref(
   const params = new URLSearchParams();
 
   if (includeCoordFilter && selectedCoord !== "todas") {
-    params.set("coordenadoria", selectedCoord);
+    params.set("executor", selectedCoord);
   }
 
   if (selectedProject !== "todos") {
@@ -40,6 +40,7 @@ export const ACTIVITY_STATUS_FILTER_BY_LABEL: Record<string, string> = {
   "Concluído": "ok",
   "ConcluÃ­do": "ok",
   "Em andamento": "warn",
+  "A Iniciar": "pending",
   "Não Iniciado": "pending",
   "NÃ£o Iniciado": "pending",
   Atrasado: "late",
