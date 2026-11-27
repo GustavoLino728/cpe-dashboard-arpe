@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from uuid import UUID
 
-from sqlalchemy import Text, and_, any_, case, cast, func, not_, or_, select
+from sqlalchemy import Text, and_, case, cast, exists, func, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.activities.models import Activity
@@ -65,9 +65,9 @@ def build_status_predicates(today: date):
     (is_done, is_late, is_in_progress, is_to_start).
     """
     effective_deadline = func.coalesce(Activity.new_date, Activity.deadline)
-    status_safe = func.coalesce(Activity.status, "")
+    status_folded = _fold_sql_column(Activity.status)
 
-    is_done = status_safe.ilike("%conclu%")
+    is_done = status_folded.like("%conclu%")
     is_late = and_(
         not_(is_done),
         effective_deadline.is_not(None),
@@ -76,10 +76,23 @@ def build_status_predicates(today: date):
     is_in_progress = and_(
         not_(is_done),
         not_(is_late),
-        status_safe.ilike("%andamento%"),
+        status_folded.like("%andamento%"),
     )
     is_to_start = and_(not_(is_done), not_(is_late), not_(is_in_progress))
     return effective_deadline, is_done, is_late, is_in_progress, is_to_start
+
+
+def _build_executor_match_clause(executor_raw: str):
+    """
+    Compara elementos de Activity.department ignorando acentos e caixa (upper/lower).
+    """
+    folded = fold_accents(clean_executor_label(executor_raw))
+    arpe_folded = f"arpe ({folded})"
+    dept_elem = func.unnest(Activity.department).column_valued("dept_elem")
+    elem_folded = func.trim(_fold_sql_column(dept_elem))
+    return exists(
+        select(1).where(or_(elem_folded == folded, elem_folded == arpe_folded))
+    )
 
 
 def build_full_row_search_clause(search: str):
@@ -201,32 +214,34 @@ def build_activity_where_clauses(params: ActivityQueryParams) -> tuple[list, tup
             clauses.append(search_clause)
 
     if params.mrae and params.mrae.strip().lower() not in ("todos", "todas"):
-        clauses.append(func.trim(Activity.mrae) == params.mrae.strip())
+        clauses.append(
+            func.trim(_fold_sql_column(Activity.mrae)) == fold_accents(params.mrae.strip())
+        )
 
     if params.instrumento and params.instrumento.strip().lower() not in ("todos", "todas"):
-        clauses.append(func.trim(Activity.instrument) == params.instrumento.strip())
+        clauses.append(
+            func.trim(_fold_sql_column(Activity.instrument))
+            == fold_accents(params.instrumento.strip())
+        )
 
     if params.project and params.project.strip().lower() != "todos":
-        clauses.append(Project.name == params.project.strip())
+        clauses.append(
+            func.trim(_fold_sql_column(Project.name))
+            == fold_accents(params.project.strip())
+        )
 
     executor_value = params.executor or params.coordenadoria
     if executor_value and executor_value.strip().lower() not in ("todos", "todas"):
         cleaned_exec = clean_executor_label(executor_value)
         if cleaned_exec:
-            clauses.append(
-                or_(
-                    any_(Activity.department) == cleaned_exec,
-                    any_(Activity.department) == f"ARPE ({cleaned_exec})",
-                )
-            )
+            clauses.append(_build_executor_match_clause(cleaned_exec))
 
     if params.responsavel and params.responsavel.strip():
         cleaned_resp = clean_executor_label(params.responsavel)
         resp_pattern = f"%{escape_like_term(fold_accents(params.responsavel.strip()))}%"
         clauses.append(
             or_(
-                any_(Activity.department) == cleaned_resp,
-                any_(Activity.department) == f"ARPE ({cleaned_resp})",
+                _build_executor_match_clause(cleaned_resp),
                 _fold_sql_column(Activity.primary_responsible).like(
                     resp_pattern, escape="\\"
                 ),
