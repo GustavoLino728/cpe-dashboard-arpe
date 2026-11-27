@@ -5,9 +5,24 @@ import {
   fetchProjectsSimple,
   extractCoordenadorias,
   buildCoordColors,
+  parseLocalIsoDate,
   statusMap,
   Atividade,
 } from "@/lib/api";
+
+function countUpcomingDeadlines(
+  items: Atividade[],
+  today: Date,
+  maxDays: number
+): number {
+  return items.filter((item) => {
+    if (item.status === "ok" || !item.data_fim) return false;
+    const dl = parseLocalIsoDate(item.data_fim);
+    if (!dl) return false;
+    const diff = Math.ceil((dl.getTime() - today.getTime()) / 86400000);
+    return diff >= 0 && diff <= maxDays;
+  }).length;
+}
 
 export function useDashboardData() {
   const { scope, selectedCoord, setSelectedCoord } = useDashboard();
@@ -59,13 +74,13 @@ export function useDashboardData() {
     return allProjects.map((p) => p.name).sort();
   }, [allProjects]);
 
-
-
   const filteredData = useMemo(() => {
     let data = atividades;
 
     if (scope !== "pessoal" && selectedCoord !== "todas") {
-      data = data.filter((d) => d.coordenadoria === selectedCoord);
+      data = data.filter(
+        (d) => d.executors.includes(selectedCoord) || d.coordenadoria === selectedCoord
+      );
     }
 
     if (selectedProject !== "todos") {
@@ -87,37 +102,19 @@ export function useDashboardData() {
   const notStarted = filteredData.filter((d) => d.status === "pending").length;
   const donePercent = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  // Prazos críticos: contagem de atividades não concluídas com prazo nos próximos N dias
+  // Janelas críticas de 30, 60 e 90 dias alinhadas à base de Concessão
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const deadlines7 = filteredData.filter((d) => {
-    if (d.status === "ok" || !d.data_fim) return false;
-    const dl = new Date(d.data_fim);
-    dl.setHours(0, 0, 0, 0);
-    const diff = Math.ceil((dl.getTime() - today.getTime()) / 86400000);
-    return diff >= 0 && diff <= 7;
-  }).length;
-  const deadlines15 = filteredData.filter((d) => {
-    if (d.status === "ok" || !d.data_fim) return false;
-    const dl = new Date(d.data_fim);
-    dl.setHours(0, 0, 0, 0);
-    const diff = Math.ceil((dl.getTime() - today.getTime()) / 86400000);
-    return diff >= 0 && diff <= 15;
-  }).length;
-  const deadlines30 = filteredData.filter((d) => {
-    if (d.status === "ok" || !d.data_fim) return false;
-    const dl = new Date(d.data_fim);
-    dl.setHours(0, 0, 0, 0);
-    const diff = Math.ceil((dl.getTime() - today.getTime()) / 86400000);
-    return diff >= 0 && diff <= 30;
-  }).length;
+  const deadlines30 = countUpcomingDeadlines(filteredData, today, 30);
+  const deadlines60 = countUpcomingDeadlines(filteredData, today, 60);
+  const deadlines90 = countUpcomingDeadlines(filteredData, today, 90);
 
   const activeCoordinations = useMemo(() => {
     return new Set(filteredData.map((d) => d.coordenadoria)).size;
   }, [filteredData]);
 
   const activeResponsibles = useMemo(() => {
-    return new Set(filteredData.map((d) => d.responsavel)).size;
+    return new Set(filteredData.map((d) => d.responsavel || "Sem executor")).size;
   }, [filteredData]);
 
   const viewNote = useMemo(() => {
@@ -134,7 +131,9 @@ export function useDashboardData() {
 
   const donutCoordData = useMemo(() => {
     return coordenadorias.map((c) => {
-      const value = atividades.filter((d) => d.coordenadoria === c).length;
+      const value = atividades.filter(
+        (d) => d.executors.includes(c) || d.coordenadoria === c
+      ).length;
       return { name: c, value, color: coordColors[c] };
     });
   }, [coordenadorias, coordColors, atividades]);
@@ -143,7 +142,7 @@ export function useDashboardData() {
     return [
       { name: "Concluído", value: done, color: statusMap.ok.corHex },
       { name: "Em andamento", value: progress, color: statusMap.warn.corHex },
-      { name: "Não Iniciado", value: notStarted, color: statusMap.pending.corHex },
+      { name: "A Iniciar", value: notStarted, color: statusMap.pending.corHex },
       { name: "Atrasado", value: late, color: statusMap.late.corHex },
     ].filter((item) => item.value > 0);
   }, [done, progress, notStarted, late]);
@@ -151,7 +150,8 @@ export function useDashboardData() {
   const donutRespData = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredData.forEach((d) => {
-      counts[d.responsavel] = (counts[d.responsavel] || 0) + 1;
+      const label = d.responsavel || "Sem executor";
+      counts[label] = (counts[label] || 0) + 1;
     });
 
     const topColors = ["#3B82F6", "#8B5CF6", "#EC4899", "#06B6D4", "#F97316"];
@@ -171,24 +171,38 @@ export function useDashboardData() {
       7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez",
     };
 
-    // Agrupar atividades por mes/ano do prazo final real
-    const buckets: Record<string, { sortKey: string; "Concluído": number; "Em andamento": number; "Não Iniciado": number; "Atrasado": number }> = {};
+    const buckets: Record<
+      string,
+      {
+        sortKey: string;
+        "Concluído": number;
+        "Em andamento": number;
+        "A Iniciar": number;
+        Atrasado: number;
+      }
+    > = {};
 
     filteredData.forEach((d) => {
       if (!d.data_fim) return;
-      const dt = new Date(d.data_fim + "T00:00:00");
-      if (isNaN(dt.getTime())) return;
+      const dt = parseLocalIsoDate(d.data_fim);
+      if (!dt) return;
       const m = dt.getMonth() + 1;
       const y = dt.getFullYear();
       const label = `${MONTHS_PT[m]}/${String(y).slice(-2)}`;
       const sortKey = `${y}-${String(m).padStart(2, "0")}`;
       if (!buckets[label]) {
-        buckets[label] = { sortKey, "Concluído": 0, "Em andamento": 0, "Não Iniciado": 0, "Atrasado": 0 };
+        buckets[label] = {
+          sortKey,
+          "Concluído": 0,
+          "Em andamento": 0,
+          "A Iniciar": 0,
+          Atrasado: 0,
+        };
       }
       if (d.status === "ok") buckets[label]["Concluído"]++;
       else if (d.status === "warn") buckets[label]["Em andamento"]++;
-      else if (d.status === "pending") buckets[label]["Não Iniciado"]++;
-      else if (d.status === "late") buckets[label]["Atrasado"]++;
+      else if (d.status === "pending") buckets[label]["A Iniciar"]++;
+      else if (d.status === "late") buckets[label].Atrasado++;
     });
 
     return Object.entries(buckets)
@@ -197,8 +211,8 @@ export function useDashboardData() {
         name,
         "Concluído": vals["Concluído"],
         "Em andamento": vals["Em andamento"],
-        "Não Iniciado": vals["Não Iniciado"],
-        "Atrasado": vals["Atrasado"],
+        "A Iniciar": vals["A Iniciar"],
+        Atrasado: vals.Atrasado,
       }));
   }, [filteredData]);
 
@@ -226,9 +240,9 @@ export function useDashboardData() {
       donePercent,
       activeCoordinations,
       activeResponsibles,
-      deadlines7,
-      deadlines15,
       deadlines30,
+      deadlines60,
+      deadlines90,
       viewNote,
     },
     charts: {
