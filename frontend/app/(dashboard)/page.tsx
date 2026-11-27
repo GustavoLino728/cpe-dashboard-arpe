@@ -113,9 +113,9 @@ export default function DashboardHome() {
         notStarted={metrics.notStarted}
         progress={metrics.progress}
         donePercent={metrics.donePercent}
-        deadlines7={metrics.deadlines7}
-        deadlines15={metrics.deadlines15}
         deadlines30={metrics.deadlines30}
+        deadlines60={metrics.deadlines60}
+        deadlines90={metrics.deadlines90}
         late={metrics.late}
         selectedCoord={selectedCoord}
         selectedProject={selectedProject}

@@ -19,9 +19,9 @@ interface DashboardKPIsProps {
   notStarted: number;
   progress: number;
   donePercent: number;
-  deadlines7: number;
-  deadlines15: number;
   deadlines30: number;
+  deadlines60: number;
+  deadlines90: number;
   late: number;
   selectedCoord?: string;
   selectedProject?: string;
@@ -34,9 +34,9 @@ export function DashboardKPIs({
   notStarted,
   progress,
   donePercent,
-  deadlines7,
-  deadlines15,
   deadlines30,
+  deadlines60,
+  deadlines90,
   late,
   selectedCoord = "todas",
   selectedProject = "todos",
@@ -58,7 +58,7 @@ export function DashboardKPIs({
     },
     {
       value: notStarted,
-      label: "Não Iniciadas",
+      label: "A Iniciar",
       icon: <PauseCircle className="w-5 h-5 shrink-0" />,
       accentColor: "#6B7280",
       href: buildActivitiesHref({ status: "pending" }, activityFilterContext),
@@ -78,25 +78,25 @@ export function DashboardKPIs({
       href: buildActivitiesHref({ status: "ok" }, activityFilterContext),
     },
     {
-      value: deadlines7,
-      label: "Prazos críticos - 7 dias",
-      icon: <AlertTriangle className="w-5 h-5 shrink-0" />,
-      accentColor: "#C4432D",
-      href: buildActivitiesHref({ prazo: "7" }, activityFilterContext),
-    },
-    {
-      value: deadlines15,
-      label: "Prazos críticos - 15 dias",
-      icon: <Timer className="w-5 h-5 shrink-0" />,
-      accentColor: "#D97706",
-      href: buildActivitiesHref({ prazo: "15" }, activityFilterContext),
-    },
-    {
       value: deadlines30,
       label: "Prazos críticos - 30 dias",
+      icon: <AlertTriangle className="w-5 h-5 shrink-0" />,
+      accentColor: "#C4432D",
+      href: buildActivitiesHref({ prazo: "30" }, activityFilterContext),
+    },
+    {
+      value: deadlines60,
+      label: "Prazos críticos - 60 dias",
+      icon: <Timer className="w-5 h-5 shrink-0" />,
+      accentColor: "#D97706",
+      href: buildActivitiesHref({ prazo: "60" }, activityFilterContext),
+    },
+    {
+      value: deadlines90,
+      label: "Prazos críticos - 90 dias",
       icon: <CalendarClock className="w-5 h-5 shrink-0" />,
       accentColor: "#D99A4E",
-      href: buildActivitiesHref({ prazo: "30" }, activityFilterContext),
+      href: buildActivitiesHref({ prazo: "90" }, activityFilterContext),
     },
     {
       value: late,

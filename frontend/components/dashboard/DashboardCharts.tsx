@@ -32,7 +32,7 @@ interface DashboardChartsProps {
     name: string;
     "Concluído": number;
     "Em andamento": number;
-    "Não Iniciado": number;
+    "A Iniciar": number;
     Atrasado: number;
   }>;
   selectedCoord?: string;
@@ -161,7 +161,7 @@ export function DashboardCharts({
                   fill="#F59E0B"
                 />
                 <Bar
-                  dataKey="Não Iniciado"
+                  dataKey="A Iniciar"
                   stackId="statusStack"
                   fill="#6B7280"
                 />

@@ -7,7 +7,11 @@ import {
   ApiSectorStatus,
   ApiCriticalActivity,
   ApiTimelineEvent,
+  ApiSyncStatus,
+  ActivityKpis,
   Atividade,
+  PaginatedActivitiesQuery,
+  PaginatedAtividades,
   ApiUser,
   ApiUserCreate,
   ApiUserUpdate,
@@ -32,7 +36,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 export class ApiError extends Error {
   constructor(
     message: string,
-    public statusCode: number
+    public statusCode: number,
+    public retryAfterSeconds?: number
   ) {
     super(message);
     this.name = "ApiError";
@@ -120,7 +125,13 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
         }
       }
 
-      throw new ApiError(detail, res.status);
+      const retryHeader = res.headers.get("Retry-After");
+      const retryAfterSeconds = retryHeader ? Number.parseInt(retryHeader, 10) : undefined;
+      throw new ApiError(
+        detail,
+        res.status,
+        Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined
+      );
     }
 
     if (res.status === 204) return undefined as unknown as T;
@@ -144,32 +155,40 @@ export async function fetchAtividades(): Promise<Atividade[]> {
   );
 }
 
-export interface PaginatedAtividades {
-  total: number;
-  page: number;
-  limit: number;
-  activities: Atividade[];
-  coordenadorias: string[];
-  projetos: string[];
-}
-
 export async function fetchPaginatedAtividades(
-  page = 1,
-  limit = 15,
-  search = "",
-  coordenadoria = "",
-  project = "",
-  status = "",
-  prazo = "",
-  activityId = "",
-  responsavel = ""
+  query: PaginatedActivitiesQuery = {}
 ): Promise<PaginatedAtividades> {
+  const {
+    page = 1,
+    limit = 15,
+    search = "",
+    mrae = "",
+    instrumento = "",
+    mes_inicial = "",
+    mes_final = "",
+    executor = "",
+    coordenadoria = "",
+    responsavel = "",
+    project = "",
+    status = "",
+    prazo = "",
+    activityId = "",
+  } = query;
+
   const params = new URLSearchParams();
   params.append("page", page.toString());
   params.append("limit", limit.toString());
   if (activityId) params.append("activity_id", activityId);
   if (search) params.append("search", search);
-  if (coordenadoria && coordenadoria !== "todas") params.append("coordenadoria", coordenadoria);
+  if (mrae && mrae !== "todos") params.append("mrae", mrae);
+  if (instrumento && instrumento !== "todos") params.append("instrumento", instrumento);
+  if (mes_inicial) params.append("mes_inicial", mes_inicial);
+  if (mes_final) params.append("mes_final", mes_final);
+  if (executor && executor !== "todos" && executor !== "todas") {
+    params.append("executor", executor);
+  } else if (coordenadoria && coordenadoria !== "todas") {
+    params.append("coordenadoria", coordenadoria);
+  }
   if (responsavel) params.append("responsavel", responsavel);
   if (project && project !== "todos") params.append("project", project);
   if (status && status !== "todos") params.append("status_filter", status);
@@ -180,9 +199,21 @@ export async function fetchPaginatedAtividades(
     page: number;
     limit: number;
     activities: ApiActivity[];
+    kpis?: ActivityKpis;
     coordenadorias: string[];
     projetos: string[];
+    mraes?: string[];
+    instrumentos?: string[];
+    executores?: string[];
   }>(`/api/v1/projects/activities/paginated?${params.toString()}`);
+
+  const fallbackKpis: ActivityKpis = {
+    total: res.total,
+    concluidas: 0,
+    atrasadas: 0,
+    em_andamento: 0,
+    a_iniciar: 0,
+  };
 
   return {
     total: res.total,
@@ -192,9 +223,17 @@ export async function fetchPaginatedAtividades(
       ...mapApiToAtividade(act),
       projeto: act.project_name ?? "—",
     })),
+    kpis: res.kpis ?? fallbackKpis,
     coordenadorias: res.coordenadorias,
     projetos: res.projetos,
+    mraes: res.mraes ?? [],
+    instrumentos: res.instrumentos ?? [],
+    executores: res.executores ?? res.coordenadorias ?? [],
   };
+}
+
+export async function fetchSyncStatus(): Promise<ApiSyncStatus> {
+  return apiFetch<ApiSyncStatus>("/api/v1/projects/sync/status");
 }
 
 export async function fetchProjects(): Promise<ApiProject[]> {

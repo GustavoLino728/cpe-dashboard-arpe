@@ -14,6 +14,8 @@ export default function PlanilhasPage() {
     uploading,
     uploadError,
     uploadSuccess,
+    syncStatus,
+    cooldownRemaining,
     setUploadError,
     setUploadSuccess,
     loadData,
@@ -28,6 +30,8 @@ export default function PlanilhasPage() {
         uploading={uploading}
         uploadError={uploadError}
         uploadSuccess={uploadSuccess}
+        syncStatus={syncStatus}
+        cooldownRemaining={cooldownRemaining}
         setUploadError={setUploadError}
         setUploadSuccess={setUploadSuccess}
         handleSync={handleSync}

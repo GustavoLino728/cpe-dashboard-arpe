@@ -1,153 +1,315 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ActivityTable } from "@/components/ActivityTable";
 import {
+  ActivityFiltersSidebar,
+  ActiveFilterChips,
+  ActiveFilterChipItem,
+} from "@/components/atividades/ActivityFiltersSidebar";
+import { ActivitySummaryStrip } from "@/components/atividades/ActivitySummaryStrip";
+import {
   fetchPaginatedAtividades,
+  ActivityKpis,
   Atividade,
 } from "@/lib/api";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: "A Iniciar",
+  warn: "Em andamento",
+  ok: "Concluído",
+  late: "Atrasado",
+};
+
+function formatMonthLabel(isoMonth: string): string {
+  const [year, month] = isoMonth.split("-");
+  if (!year || !month) return isoMonth;
+  return `${month}/${year}`;
+}
+
 export default function AtividadesPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const coordParam = searchParams.get("coordenadoria");
-  const projectParam = searchParams.get("project");
-  const statusParam = searchParams.get("status");
-  const prazoParam = searchParams.get("prazo");
-  const activityIdParam = searchParams.get("activity_id");
-  const activitySearchParam = searchParams.get("activity_search") || "";
-  const responsavelParam = searchParams.get("responsavel") || "";
 
-  const [search, setSearch] = useState(activitySearchParam);
-  const [debouncedSearch, setDebouncedSearch] = useState(activitySearchParam);
-  const [selectedCoord, setSelectedCoord] = useState<string>(coordParam || "todas");
-  const [selectedProject, setSelectedProject] = useState<string>(projectParam || "todos");
-  const [selectedStatus, setSelectedStatus] = useState<string>(statusParam || "todos");
-  const [selectedPrazo, setSelectedPrazo] = useState<string>(prazoParam || "todos");
-  
+  // Fonte única de verdade via URL (compartilhável e reativa a cliques vindos da Visão geral)
+  const selectedMrae = searchParams.get("mrae") || "todos";
+  const selectedInstrumento = searchParams.get("instrumento") || "todos";
+  const mesInicial = searchParams.get("mes_inicial") || "";
+  const mesFinal = searchParams.get("mes_final") || "";
+  const selectedExecutor =
+    searchParams.get("executor") || searchParams.get("coordenadoria") || "todos";
+  const selectedProject = searchParams.get("project") || "todos";
+  const selectedStatus = searchParams.get("status") || "todos";
+  const selectedPrazo = searchParams.get("prazo") || "todos";
+  const selectedResponsavel = searchParams.get("responsavel") || "";
+  const activityIdParam = searchParams.get("activity_id") || "";
+  const urlSearch =
+    searchParams.get("search") || searchParams.get("activity_search") || "";
+
+  const [searchInput, setSearchInput] = useState(urlSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(urlSearch);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [atividades, setAtividades] = useState<Atividade[]>([]);
-  const [coordenadorias, setCoordenadorias] = useState<string[]>([]);
-  const [projetos, setProjetos] = useState<string[]>([]);
+  const [kpis, setKpis] = useState<ActivityKpis>({
+    total: 0,
+    concluidas: 0,
+    atrasadas: 0,
+    em_andamento: 0,
+    a_iniciar: 0,
+  });
+  const [mraes, setMraes] = useState<string[]>([]);
+  const [instrumentos, setInstrumentos] = useState<string[]>([]);
+  const [executores, setExecutores] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
   const latestRequestId = useRef(0);
-  
+
   const limit = 15;
 
-  // Sync state with search parameter when it is present
-  useEffect(() => {
-    setSelectedCoord(coordParam || "todas");
-    setSelectedProject(projectParam || "todos");
-    setSelectedStatus(statusParam || "todos");
-    setSelectedPrazo(prazoParam || "todos");
-    setSearch(activitySearchParam);
-    setDebouncedSearch(activitySearchParam);
-    setPage(1);
-  }, [coordParam, projectParam, statusParam, prazoParam, activitySearchParam]);
-
-  // Debounce search input
+  // Debounce de 300ms apenas para o input textual
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      setDebouncedSearch((prev) => {
+        if (prev !== searchInput) {
+          setPage(1);
+        }
+        return searchInput;
+      });
     }, 300);
     return () => clearTimeout(handler);
-  }, [search]);
+  }, [searchInput]);
 
-  const loadData = useCallback(async () => {
-    const requestId = latestRequestId.current + 1;
-    latestRequestId.current = requestId;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchPaginatedAtividades(
-        page,
-        limit,
-        activityIdParam ? "" : debouncedSearch,
-        selectedCoord,
-        selectedProject,
-        selectedStatus,
-        selectedPrazo,
-        activityIdParam || "",
-        responsavelParam
-      );
-      if (activityIdParam && data.total === 0 && activitySearchParam) {
-        const fallbackData = await fetchPaginatedAtividades(
-          1,
-          limit,
-          activitySearchParam,
-          "todas",
-          "todos",
-          "todos",
-          "todos",
-          "",
-          responsavelParam
-        );
-        if (requestId !== latestRequestId.current) return;
-        setAtividades(fallbackData.activities);
-        setTotal(fallbackData.total);
-        setCoordenadorias(fallbackData.coordenadorias);
-        setProjetos(fallbackData.projetos);
-        return;
-      }
-      if (requestId !== latestRequestId.current) return;
-      setAtividades(data.activities);
-      setTotal(data.total);
-      setCoordenadorias(data.coordenadorias);
-      setProjetos(data.projetos);
-    } catch (err) {
-      if (requestId !== latestRequestId.current) return;
-      const msg =
-        err instanceof Error ? err.message : "Erro ao carregar atividades";
-      setError(msg);
-      setAtividades([]);
-    } finally {
-      if (requestId !== latestRequestId.current) return;
-      setLoading(false);
-    }
-  }, [page, debouncedSearch, selectedCoord, selectedProject, selectedStatus, selectedPrazo, activityIdParam, activitySearchParam, responsavelParam]);
+  const updateUrlFilters = useCallback(
+    (overrides: Partial<Record<string, string>>) => {
+      const next = new URLSearchParams();
+      const merged = {
+        mrae: overrides.mrae ?? selectedMrae,
+        instrumento: overrides.instrumento ?? selectedInstrumento,
+        mes_inicial: overrides.mes_inicial ?? mesInicial,
+        mes_final: overrides.mes_final ?? mesFinal,
+        executor: overrides.executor ?? selectedExecutor,
+        project: overrides.project ?? selectedProject,
+        status: overrides.status ?? selectedStatus,
+        prazo: overrides.prazo ?? selectedPrazo,
+        responsavel: overrides.responsavel ?? selectedResponsavel,
+        search: overrides.search ?? searchInput,
+      };
+
+      if (merged.mrae && merged.mrae !== "todos") next.set("mrae", merged.mrae);
+      if (merged.instrumento && merged.instrumento !== "todos")
+        next.set("instrumento", merged.instrumento);
+      if (merged.mes_inicial) next.set("mes_inicial", merged.mes_inicial);
+      if (merged.mes_final) next.set("mes_final", merged.mes_final);
+      if (merged.executor && merged.executor !== "todos" && merged.executor !== "todas")
+        next.set("executor", merged.executor);
+      if (merged.project && merged.project !== "todos")
+        next.set("project", merged.project);
+      if (merged.status && merged.status !== "todos") next.set("status", merged.status);
+      if (merged.prazo && merged.prazo !== "todos") next.set("prazo", merged.prazo);
+      if (merged.responsavel) next.set("responsavel", merged.responsavel);
+      if (merged.search.trim()) next.set("search", merged.search.trim());
+
+      setPage(1);
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [
+      pathname,
+      router,
+      selectedMrae,
+      selectedInstrumento,
+      mesInicial,
+      mesFinal,
+      selectedExecutor,
+      selectedProject,
+      selectedStatus,
+      selectedPrazo,
+      selectedResponsavel,
+      searchInput,
+    ]
+  );
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
 
-  const handleCoordChange = (val: string) => {
-    setSelectedCoord(val);
-    setPage(1);
-  };
+    const queryPromise = (async () => {
+      setLoading(true);
+      setError(null);
+      const data = await fetchPaginatedAtividades({
+        page,
+        limit,
+        activityId: activityIdParam,
+        search: activityIdParam ? "" : debouncedSearch,
+        mrae: selectedMrae,
+        instrumento: selectedInstrumento,
+        mes_inicial: mesInicial,
+        mes_final: mesFinal,
+        executor: selectedExecutor,
+        project: selectedProject,
+        status: selectedStatus,
+        prazo: selectedPrazo,
+        responsavel: selectedResponsavel,
+      });
 
-  const handleProjectChange = (val: string) => {
-    setSelectedProject(val);
-    setPage(1);
-  };
+      if (activityIdParam && data.total === 0 && urlSearch) {
+        return fetchPaginatedAtividades({
+          page: 1,
+          limit,
+          search: urlSearch,
+          responsavel: selectedResponsavel,
+        });
+      }
+      return data;
+    })();
 
-  const handleStatusChange = (val: string) => {
-    setSelectedStatus(val);
-    setPage(1);
-  };
+    queryPromise
+      .then((data) => {
+        if (requestId !== latestRequestId.current) return;
+        setAtividades(data.activities);
+        setTotal(data.total);
+        setKpis(data.kpis);
+        setMraes(data.mraes);
+        setInstrumentos(data.instrumentos);
+        setExecutores(data.executores);
+      })
+      .catch((err) => {
+        if (requestId !== latestRequestId.current) return;
+        const msg =
+          err instanceof Error ? err.message : "Erro ao carregar atividades";
+        setError(msg);
+        setAtividades([]);
+      })
+      .finally(() => {
+        if (requestId !== latestRequestId.current) return;
+        setLoading(false);
+      });
+  }, [
+    page,
+    debouncedSearch,
+    selectedMrae,
+    selectedInstrumento,
+    mesInicial,
+    mesFinal,
+    selectedExecutor,
+    selectedProject,
+    selectedStatus,
+    selectedPrazo,
+    selectedResponsavel,
+    activityIdParam,
+    urlSearch,
+    reloadNonce,
+  ]);
 
-  const handlePrazoChange = (val: string) => {
-    setSelectedPrazo(val);
+  const resetFilters = useCallback(() => {
+    setSearchInput("");
+    setDebouncedSearch("");
     setPage(1);
-  };
+    router.replace(pathname, { scroll: false });
+  }, [pathname, router]);
 
-  const resetFilters = () => {
-    setSearch("");
-    setSelectedCoord("todas");
-    setSelectedProject("todos");
-    setSelectedStatus("todos");
-    setSelectedPrazo("todos");
+  const handleSearchChange = useCallback((val: string) => {
+    setSearchInput(val);
     setPage(1);
-    if (activityIdParam) {
-      router.replace("/atividades");
-    } else if (responsavelParam) {
-      router.replace("/atividades");
+  }, []);
+
+  const activeChips = useMemo<ActiveFilterChipItem[]>(() => {
+    const chips: ActiveFilterChipItem[] = [];
+    if (selectedMrae !== "todos") {
+      chips.push({
+        key: "mrae",
+        label: `MRAE: ${selectedMrae}`,
+        onRemove: () => updateUrlFilters({ mrae: "todos" }),
+      });
     }
-  };
+    if (selectedInstrumento !== "todos") {
+      chips.push({
+        key: "instrumento",
+        label: `Instrumento: ${selectedInstrumento}`,
+        onRemove: () => updateUrlFilters({ instrumento: "todos" }),
+      });
+    }
+    if (mesInicial) {
+      chips.push({
+        key: "mes_inicial",
+        label: `Mês inicial: ${formatMonthLabel(mesInicial)}`,
+        onRemove: () => updateUrlFilters({ mes_inicial: "" }),
+      });
+    }
+    if (mesFinal) {
+      chips.push({
+        key: "mes_final",
+        label: `Mês final: ${formatMonthLabel(mesFinal)}`,
+        onRemove: () => updateUrlFilters({ mes_final: "" }),
+      });
+    }
+    if (selectedExecutor !== "todos" && selectedExecutor !== "todas") {
+      chips.push({
+        key: "executor",
+        label: `Executor: ${selectedExecutor}`,
+        onRemove: () => updateUrlFilters({ executor: "todos" }),
+      });
+    }
+    if (selectedStatus !== "todos") {
+      chips.push({
+        key: "status",
+        label: `Status: ${STATUS_LABELS[selectedStatus] ?? selectedStatus}`,
+        onRemove: () => updateUrlFilters({ status: "todos" }),
+      });
+    }
+    if (selectedPrazo !== "todos") {
+      chips.push({
+        key: "prazo",
+        label: `Prazo: próximos ${selectedPrazo} dias`,
+        onRemove: () => updateUrlFilters({ prazo: "todos" }),
+      });
+    }
+    if (selectedProject !== "todos") {
+      chips.push({
+        key: "project",
+        label: `Aba/Projeto: ${selectedProject}`,
+        onRemove: () => updateUrlFilters({ project: "todos" }),
+      });
+    }
+    if (selectedResponsavel) {
+      chips.push({
+        key: "responsavel",
+        label: `Área: ${selectedResponsavel}`,
+        onRemove: () => updateUrlFilters({ responsavel: "" }),
+      });
+    }
+    if (searchInput.trim()) {
+      chips.push({
+        key: "search",
+        label: `Busca: "${searchInput.trim()}"`,
+        onRemove: () => {
+          setSearchInput("");
+          setDebouncedSearch("");
+          updateUrlFilters({ search: "" });
+        },
+      });
+    }
+    return chips;
+  }, [
+    selectedMrae,
+    selectedInstrumento,
+    mesInicial,
+    mesFinal,
+    selectedExecutor,
+    selectedStatus,
+    selectedPrazo,
+    selectedProject,
+    selectedResponsavel,
+    searchInput,
+    updateUrlFilters,
+  ]);
+
+  const hasActiveFilters = activeChips.length > 0 || Boolean(activityIdParam);
 
   if (error && !loading) {
     return (
@@ -159,7 +321,7 @@ export default function AtividadesPage() {
           <span className="text-[12px] text-ink-soft/70">{error}</span>
         </p>
         <button
-          onClick={loadData}
+          onClick={() => setReloadNonce((n) => n + 1)}
           className="flex items-center gap-2 font-sans text-[13px] font-semibold text-white bg-teal rounded-lg py-2 px-4 cursor-pointer hover:bg-teal/90 active:scale-[0.98] transition-all duration-150 shadow-sm"
         >
           <RefreshCw className="w-4 h-4" /> Tentar novamente
@@ -169,164 +331,108 @@ export default function AtividadesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Barra de Busca por Texto */}
-      <div className="view-row flex items-center gap-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar atividade, responsável, projeto ou setor..."
-          className="flex-1 font-sans text-[13.5px] py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none focus:border-teal transition-colors"
+    <div className="flex flex-col lg:flex-row gap-5 items-start">
+      {/* Barra Lateral de Filtros */}
+      <ActivityFiltersSidebar
+        filters={{
+          search: searchInput,
+          mrae: selectedMrae,
+          instrumento: selectedInstrumento,
+          mesInicial,
+          mesFinal,
+          executor: selectedExecutor,
+          status: selectedStatus,
+          prazo: selectedPrazo,
+          project: selectedProject,
+          responsavel: selectedResponsavel,
+        }}
+        mraes={mraes}
+        instrumentos={instrumentos}
+        executores={executores}
+        hasActiveFilters={hasActiveFilters}
+        onSearchChange={handleSearchChange}
+        onMraeChange={(val) => updateUrlFilters({ mrae: val })}
+        onInstrumentoChange={(val) => updateUrlFilters({ instrumento: val })}
+        onMesInicialChange={(val) => updateUrlFilters({ mes_inicial: val })}
+        onMesFinalChange={(val) => updateUrlFilters({ mes_final: val })}
+        onExecutorChange={(val) => updateUrlFilters({ executor: val })}
+        onStatusChange={(val) => updateUrlFilters({ status: val })}
+        onClearAll={resetFilters}
+      />
+
+      {/* Área Principal: Faixa Compacta de 5 KPIs + Chips + Tabela */}
+      <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
+        <ActivitySummaryStrip
+          kpis={kpis}
+          loading={loading}
+          activeStatus={selectedStatus}
+          onSelectStatus={(val) => updateUrlFilters({ status: val })}
         />
-      </div>
 
-      {/* Filtros Dropdowns */}
-      <div className="flex items-end gap-4 flex-wrap">
-        {/* Responsável */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="coordSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-            Responsável
-          </label>
-          <select
-            id="coordSelect"
-            value={selectedCoord}
-            onChange={(e) => handleCoordChange(e.target.value)}
-            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
-          >
-            <option value="todas">Todos</option>
-            {coordenadorias.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+        <ActiveFilterChips chips={activeChips} onClearAll={resetFilters} />
+
+        <div className="flex items-center justify-between px-1">
+          <h2 className="font-display font-semibold text-[13.5px] text-ink select-none">
+            {activityIdParam
+              ? "Atividade referenciada"
+              : "Ações de Monitoramento"}
+          </h2>
+          {loading && (
+            <span className="text-[12px] text-ink-soft" id="loadingNote">
+              Atualizando recorte...
+            </span>
+          )}
         </div>
 
-        {/* Projeto */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="projectSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-            Projeto
-          </label>
-          <select
-            id="projectSelect"
-            value={selectedProject}
-            onChange={(e) => handleProjectChange(e.target.value)}
-            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
-          >
-            <option value="todos">Todos</option>
-            {projetos.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Status */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="statusSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-            Status
-          </label>
-          <select
-            id="statusSelect"
-            value={selectedStatus}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
-          >
-            <option value="todos">Todos</option>
-            <option value="pending">Não iniciadas</option>
-            <option value="warn">Em andamento</option>
-            <option value="ok">Concluídas</option>
-            <option value="late">Atrasadas</option>
-          </select>
-        </div>
-
-        {/* Prazo */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="prazoSelect" className="font-display font-semibold text-[12px] text-ink-soft px-1">
-            Prazo
-          </label>
-          <select
-            id="prazoSelect"
-            value={selectedPrazo}
-            onChange={(e) => handlePrazoChange(e.target.value)}
-            className="font-sans text-[13.5px] font-semibold py-2 px-3.5 rounded-lg border border-line bg-panel text-ink outline-none cursor-pointer focus:border-teal transition-colors"
-          >
-            <option value="todos">Todos</option>
-            <option value="7">Próximos 7 dias</option>
-            <option value="15">Próximos 15 dias</option>
-            <option value="30">Próximos 30 dias</option>
-          </select>
-        </div>
-
-        {/* Redefinir Filtros */}
-        <button
-          onClick={resetFilters}
-          className="font-sans text-[13px] font-semibold text-teal hover:text-teal/80 border border-teal/20 hover:border-teal/40 rounded-lg py-2 px-4 cursor-pointer hover:bg-teal/5 transition-all duration-150 shadow-sm h-[38px] flex items-center justify-center"
-        >
-          Redefinir Filtros
-        </button>
-
-        {loading && (
-          <span className="text-[12px] text-ink-soft ml-auto" id="loadingNote">
-            Carregando dados...
-          </span>
-        )}
-      </div>
-
-      {/* Tabela de Atividades */}
-      <div className="flex flex-col gap-3">
-        <h2 className="font-display font-semibold text-[13.5px] text-ink px-1 select-none">
-          {activityIdParam
-            ? "Atividade referenciada"
-            : responsavelParam
-              ? `Atividades de ${responsavelParam}`
-              : "Todas as atividades"}
-        </h2>
         {loading ? (
-          <div className="bg-panel border border-line/30 rounded-custom p-6 h-[300px] animate-pulse flex items-center justify-center text-[11px] text-ink-soft">
+          <div className="bg-panel border border-line/35 rounded-custom p-6 h-[320px] animate-pulse flex items-center justify-center text-[12px] text-ink-soft">
             Carregando atividades...
           </div>
         ) : (
           <ActivityTable activities={atividades} />
         )}
-      </div>
 
-      {/* Paginação */}
-      {total > limit && (
-        <div className="flex items-center justify-between border-t border-line/30 pt-4 px-1 select-none">
-          <span className="text-[12px] text-ink-soft">
-            Mostrando <span className="font-semibold text-ink">{(page - 1) * limit + 1}</span> a{" "}
-            <span className="font-semibold text-ink">{Math.min(page * limit, total)}</span> de{" "}
-            <span className="font-semibold text-ink">{total}</span> atividades
-          </span>
-          <div className="flex gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className={`font-sans text-[12.5px] font-semibold py-1.5 px-3 rounded-lg border border-line bg-panel text-ink transition-all ${
-                page === 1
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-line/10 hover:text-teal active:scale-[0.98] cursor-pointer"
-              }`}
-            >
-              Anterior
-            </button>
-            <button
-              disabled={page * limit >= total}
-              onClick={() => setPage((p) => p + 1)}
-              className={`font-sans text-[12.5px] font-semibold py-1.5 px-3 rounded-lg border border-line bg-panel text-ink transition-all ${
-                page * limit >= total
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-line/10 hover:text-teal active:scale-[0.98] cursor-pointer"
-              }`}
-            >
-              Próximo
-            </button>
+        {/* Paginação */}
+        {total > limit && (
+          <div className="flex items-center justify-between border-t border-line/30 pt-4 px-1 select-none flex-wrap gap-3">
+            <span className="text-[12px] text-ink-soft">
+              Mostrando{" "}
+              <span className="font-semibold text-ink">
+                {(page - 1) * limit + 1}
+              </span>{" "}
+              a{" "}
+              <span className="font-semibold text-ink">
+                {Math.min(page * limit, total)}
+              </span>{" "}
+              de <span className="font-semibold text-ink">{total}</span> ações
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className={`font-sans text-[12.5px] font-semibold py-1.5 px-3 rounded-lg border border-line bg-panel text-ink transition-all ${
+                  page === 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-line/10 hover:text-teal active:scale-[0.98] cursor-pointer"
+                }`}
+              >
+                Anterior
+              </button>
+              <button
+                disabled={page * limit >= total}
+                onClick={() => setPage((p) => p + 1)}
+                className={`font-sans text-[12.5px] font-semibold py-1.5 px-3 rounded-lg border border-line bg-panel text-ink transition-all ${
+                  page * limit >= total
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-line/10 hover:text-teal active:scale-[0.98] cursor-pointer"
+                }`}
+              >
+                Próximo
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

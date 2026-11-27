@@ -20,33 +20,40 @@ export const statusMap: Record<StatusType, StatusDetail> = {
     corHex: "#EF4444",
   },
   pending: {
-    label: "Não Iniciado",
+    label: "A Iniciar",
     corTailwind:
       "text-slate-600 bg-slate-100 dark:bg-slate-800/40 dark:text-slate-400 border border-slate-200 dark:border-slate-700/40",
     corHex: "#6B7280",
   },
 };
 
-export function mapApiStatus(apiStatus: string): StatusType {
-  const s = apiStatus.toLowerCase();
+export function mapApiStatus(apiStatus?: string | null): StatusType {
+  const s = (apiStatus ?? "").toLowerCase();
   if (s.includes("conclu")) return "ok";
   if (s.includes("andamento")) return "warn";
-  if (s.includes("iniciado") || s.includes("n\u00e3o iniciado")) return "pending";
-  return "pending"; // fallback seguro: desconhecido = não iniciado
+  if (s.includes("iniciar") || s.includes("iniciado")) return "pending";
+  return "pending";
 }
 
-export function deriveProgress(apiStatus: string): number {
-  const s = apiStatus.toLowerCase();
+export function deriveProgress(apiStatus?: string | null): number {
+  const s = (apiStatus ?? "").toLowerCase();
   if (s.includes("conclu")) return 100;
   if (s.includes("andamento")) return 50;
   return 0;
 }
 
+export function parseLocalIsoDate(iso?: string | null): Date | null {
+  if (!iso) return null;
+  const datePart = iso.split("T")[0];
+  const parsed = new Date(`${datePart}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function formatDateShort(iso: string | null): string {
   if (!iso) return "—";
-  const parts = iso.split("-");
+  const parts = iso.split("T")[0].split("-");
   if (parts.length < 3) return iso;
-  return `${parts[2]}/${parts[1]}`;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
 export function cleanCoordenadoriaName(name: string): string {
@@ -68,50 +75,68 @@ export function isCombinedSector(name: string): boolean {
 export function mapApiToAtividade(activity: ApiActivity): Atividade {
   const prazoAtivo = activity.new_date ?? activity.deadline;
 
-  const rawDept = activity.department && activity.department.length > 0
-    ? activity.department[0]
-    : "Sem Setor";
-  
-  const cleanedDept = cleanCoordenadoriaName(rawDept);
+  const executors = (activity.department ?? [])
+    .map(cleanCoordenadoriaName)
+    .filter((item) => item && item !== "Sem Setor");
 
-  // Calcular status real: considera atraso baseado na data, não apenas no texto do status
+  const cleanedDept = executors[0] ?? "Sem Setor";
+
   let computedStatus = mapApiStatus(activity.status);
   if (computedStatus !== "ok" && prazoAtivo) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const deadline = new Date(prazoAtivo);
-    deadline.setHours(0, 0, 0, 0);
-    if (deadline < today) {
-      computedStatus = "late"; // Atrasado independente do status (exceto Concluído)
+    const deadline = parseLocalIsoDate(prazoAtivo);
+    if (deadline && deadline < today) {
+      computedStatus = "late";
     }
   }
 
   return {
     id: activity.id,
     project_id: activity.project_id,
+    mrae: activity.mrae ?? null,
+    instrument: activity.instrument ?? activity.contract ?? null,
+    clause: activity.clause ?? null,
+    phase: activity.phase ?? null,
+    thematic_group: activity.thematic_group ?? activity.group_item ?? null,
+    nature: activity.nature ?? null,
     atividade: activity.description,
+    prior_step: activity.prior_step ?? null,
+    prior_step_deadline: activity.prior_step_deadline ?? null,
+    prior_step_deadline_text: activity.prior_step_deadline_text ?? null,
+    primary_responsible: activity.primary_responsible ?? null,
     coordenadoria: cleanedDept,
-    responsavel:
-      activity.department && activity.department.length > 0
-        ? activity.department.join(", ")
-        : "—",
+    executors,
+    responsavel: executors.join(", "),
     progresso: deriveProgress(activity.status),
     prazo: formatDateShort(prazoAtivo),
     status: computedStatus,
+    projeto: activity.project_name,
     data_inicio: activity.start_date,
+    initial_deadline_text: activity.initial_deadline_text ?? null,
     data_fim: prazoAtivo,
-    contrato: activity.contract ?? "—",
+    final_deadline_text: activity.final_deadline_text ?? null,
+    contractual_deadline_text: activity.contractual_deadline_text ?? null,
+    periodicity: activity.periodicity ?? null,
+    contrato: activity.instrument ?? activity.contract ?? null,
     contrato_url: activity.contract_url ?? null,
     contrato_links: activity.contract_links ?? [],
     sei_number: activity.sei_number,
+    sei_2: activity.sei_2 ?? null,
     working_days: activity.working_days,
     deadline: activity.deadline,
     new_date: activity.new_date,
     raw_status: activity.status,
+    arpe_status: activity.arpe_status ?? null,
     observations: activity.observations,
+    object_summary: activity.object_summary ?? null,
+    summary: activity.summary ?? null,
     group_item: activity.group_item,
     step_number: activity.step_number,
     actual_start_date: activity.actual_start_date,
+    actual_end_date: activity.actual_end_date ?? null,
+    arpe_entry_date: activity.arpe_entry_date ?? null,
+    arpe_final_date: activity.arpe_final_date ?? null,
     delay_justification_problem: activity.delay_justification_problem ?? null,
     delay_justification_action: activity.delay_justification_action ?? null,
     delay_justification_responsible: activity.delay_justification_responsible ?? null,
@@ -123,8 +148,11 @@ export function mapApiToAtividade(activity: ApiActivity): Atividade {
 export function extractCoordenadorias(atividades: Atividade[]): string[] {
   const set = new Set<string>();
   for (const a of atividades) {
-    if (a.coordenadoria && a.coordenadoria !== "Sem Setor" && !isCombinedSector(a.coordenadoria)) {
-      set.add(a.coordenadoria);
+    const items = a.executors?.length ? a.executors : [a.coordenadoria];
+    for (const item of items) {
+      if (item && item !== "Sem Setor" && !isCombinedSector(item)) {
+        set.add(item);
+      }
     }
   }
   return Array.from(set).sort();
