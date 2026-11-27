@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from uuid import UUID
 
-from sqlalchemy import Text, and_, case, cast, func, not_, or_, select
+from sqlalchemy import Text, and_, any_, case, cast, func, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.activities.models import Activity
@@ -215,8 +215,8 @@ def build_activity_where_clauses(params: ActivityQueryParams) -> tuple[list, tup
         if cleaned_exec:
             clauses.append(
                 or_(
-                    Activity.department.any(cleaned_exec),
-                    Activity.department.any(f"ARPE ({cleaned_exec})"),
+                    any_(Activity.department) == cleaned_exec,
+                    any_(Activity.department) == f"ARPE ({cleaned_exec})",
                 )
             )
 
@@ -225,8 +225,8 @@ def build_activity_where_clauses(params: ActivityQueryParams) -> tuple[list, tup
         resp_pattern = f"%{escape_like_term(fold_accents(params.responsavel.strip()))}%"
         clauses.append(
             or_(
-                Activity.department.any(cleaned_resp),
-                Activity.department.any(f"ARPE ({cleaned_resp})"),
+                any_(Activity.department) == cleaned_resp,
+                any_(Activity.department) == f"ARPE ({cleaned_resp})",
                 _fold_sql_column(Activity.primary_responsible).like(
                     resp_pattern, escape="\\"
                 ),

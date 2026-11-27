@@ -63,7 +63,7 @@ class TestActivityQueryAndRouter(unittest.IsolatedAsyncioTestCase):
         ):
             self.assertIn(column_name, sql_text)
 
-        self.assertIn("ESCAPE '\\\\'", sql_text)
+        self.assertIn("ESCAPE '\\'", sql_text)
         self.assertTrue(
             any(
                 val == "%50\\%\\_agua recebida%"
